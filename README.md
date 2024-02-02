@@ -1,1 +1,1 @@
-#### For the frontend repo see: [kraken-backend](https://github.com/yismailuofa/kraken-frontend)
+#### For the frontend repo see: [kraken-frontend](https://github.com/yismailuofa/kraken-frontend)
