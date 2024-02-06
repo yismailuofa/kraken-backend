@@ -23,6 +23,7 @@ class Project(BaseModel):
     name: str
     description: str
     milestones: list[str] = []
+    sprints: list[str] = []
     createdAt: datetime.datetime
 
 
