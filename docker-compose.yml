@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  api:
+    build:
+      context: .
+    ports:
+      - 80:80
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: mongo
+    ports:
+      - 27017:27017
+    env_file:
+      - .env  
+    volumes:
+      - ./data:/data/db
+    restart: always
+    environment:
+      - "MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}"
+      - "MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}"
+      - "MONGO_INITDB_DATABASE=${MONGO_DB}"
