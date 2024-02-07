@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Status(str, Enum):
@@ -16,21 +16,26 @@ class Priority(str, Enum):
     high = "High"
 
 
-class User(BaseModel):
-    id: str
+class EditableUser(BaseModel):
     username: str
     password: str
     email: str
-    ownedProjects: list[str] = []
-    joinedProjects: list[str] = []
+
+
+class User(EditableUser):
+    id: str
+    ownedProjects: list[str] = Field([], description="Project IDs that the user owns")
+    joinedProjects: list[str] = Field(
+        [], description="Project IDs that the user is a member of"
+    )
 
 
 class Project(BaseModel):
     id: str
     name: str
     description: str
-    milestones: list[str] = []
-    sprints: list[str] = []
+    milestones: list[str] = Field([], description="Milestone IDs in the project")
+    sprints: list[str] = Field([], description="Sprint IDs in the project")
     createdAt: datetime.datetime
 
 
@@ -40,7 +45,7 @@ class Milestone(BaseModel):
     description: str
     dueDate: datetime.datetime
     status: Status
-    tasks: list[str] = []
+    tasks: list[str] = Field([], description="Task IDs in the milestone")
 
 
 class BaseTask(BaseModel):
@@ -50,7 +55,9 @@ class BaseTask(BaseModel):
     dueDate: datetime.datetime
     status: Status
     priority: Priority
-    assignedTo: str
+    assignedTo: str = Field(
+        None, description="User ID of the user assigned to the task"
+    )
 
 
 class Task(BaseTask):
@@ -64,6 +71,6 @@ class Sprint(BaseModel):
     description: str
     startDate: datetime.datetime
     endDate: datetime.datetime
-    tasks: list[str] = []
-    milestones: list[str] = []
+    tasks: list[str] = Field([], description="Task IDs in the sprint")
+    milestones: list[str] = Field([], description="Milestone IDs in the sprint")
     project: str

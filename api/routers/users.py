@@ -1,15 +1,18 @@
 from fastapi import APIRouter
+from passlib.hash import bcrypt
 
 from ..database import PyObjectId
+from ..schemas import EditableUser
 
 router = APIRouter()
 
 
-@router.get("/")
-def read_root() -> dict:
-    return {"Hello": "World1"}
+def hashPassword(password: str):
+    return bcrypt.hash(password)
 
 
-@router.get("/{id}")
-def read_item(id: PyObjectId):
-    return {"id": id.__str__()}
+@router.post("/register")
+def register(user: EditableUser):
+    user.password = hashPassword(user.password)
+
+    return user.model_dump()
