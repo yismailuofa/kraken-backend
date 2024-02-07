@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class Status(str, Enum):
-    open = "open"
+    open = "Open"
     inProgress = "In Progress"
     completed = "Completed"
 
