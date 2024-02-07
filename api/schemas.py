@@ -1,5 +1,6 @@
 import datetime
 from enum import Enum
+
 from pydantic import BaseModel
 
 
@@ -7,6 +8,12 @@ class Status(str, Enum):
     open = "Open"
     inProgress = "In Progress"
     completed = "Completed"
+
+
+class Priority(str, Enum):
+    low = "Low"
+    medium = "Medium"
+    high = "High"
 
 
 class User(BaseModel):
@@ -37,16 +44,17 @@ class Milestone(BaseModel):
 
 
 class BaseTask(BaseModel):
-    id: str
     name: str
     description: str
     createdAt: datetime.datetime
     dueDate: datetime.datetime
     status: Status
+    priority: Priority
     assignedTo: str
 
 
 class Task(BaseTask):
+    id: str
     qaTask: BaseTask
 
 
