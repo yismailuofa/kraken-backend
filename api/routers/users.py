@@ -18,6 +18,11 @@ router = APIRouter()
     "/register", status_code=status.HTTP_201_CREATED, response_model_by_alias=False
 )
 def register(editableUser: EditableUser, db: Database = Depends(getDb)) -> User:
+    if db.users.find_one({"username": editableUser.username}):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
+        )
+
     editableUser.password = hashPassword(editableUser.password)
 
     user = User(**editableUser.model_dump())
@@ -25,7 +30,10 @@ def register(editableUser: EditableUser, db: Database = Depends(getDb)) -> User:
     if not (
         result := db.users.insert_one(user.model_dump(exclude={"id"}))
     ).acknowledged:
-        raise HTTPException(status_code=500, detail="Failed to create user")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create user",
+        )
 
     userWithToken = db.users.find_one_and_update(
         {"_id": result.inserted_id},
@@ -41,7 +49,10 @@ def login(username: str, password: str, db: Database = Depends(getDb)) -> User:
     user = db.users.find_one({"username": username})
 
     if user is None or not verifyPassword(password, user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+        )
 
     return User(**user)
 
