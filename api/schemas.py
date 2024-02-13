@@ -24,11 +24,9 @@ class EditableUser(BaseModel):
 
 
 class User(EditableUser):
-    id: Annotated[str, Field(None, alias="_id"), BeforeValidator(str)]
-    ownedProjects: list[str] = Field([], description="Project IDs that the user owns")
-    joinedProjects: list[str] = Field(
-        [], description="Project IDs that the user is a member of"
-    )
+    id: Annotated[Optional[str], Field(alias="_id"), BeforeValidator(str)] = None
+    ownedProjects: list[str] = []
+    joinedProjects: list[str] = []
     token: Optional[str] = None
 
 
@@ -36,8 +34,8 @@ class Project(BaseModel):
     id: str
     name: str
     description: str
-    milestones: list[str] = Field([], description="Milestone IDs in the project")
-    sprints: list[str] = Field([], description="Sprint IDs in the project")
+    milestones: list[str] = []
+    sprints: list[str] = []
     createdAt: datetime.datetime
 
 
@@ -47,7 +45,7 @@ class Milestone(BaseModel):
     description: str
     dueDate: datetime.datetime
     status: Status
-    tasks: list[str] = Field([], description="Task IDs in the milestone")
+    tasks: list[str] = []
 
 
 class BaseTask(BaseModel):
@@ -57,9 +55,7 @@ class BaseTask(BaseModel):
     dueDate: datetime.datetime
     status: Status
     priority: Priority
-    assignedTo: str = Field(
-        None, description="User ID of the user assigned to the task"
-    )
+    assignedTo: Optional[str] = None
 
 
 class Task(BaseTask):
@@ -73,6 +69,6 @@ class Sprint(BaseModel):
     description: str
     startDate: datetime.datetime
     endDate: datetime.datetime
-    tasks: list[str] = Field([], description="Task IDs in the sprint")
-    milestones: list[str] = Field([], description="Milestone IDs in the sprint")
+    tasks: list[str] = []
+    milestones: list[str] = []
     project: str

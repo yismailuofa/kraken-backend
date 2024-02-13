@@ -9,11 +9,9 @@ client = MongoClient("localhost", 27017)
 
 db = client[os.environ.get("MONGO_DB", "kraken")]
 
-usersCollection = db["users"]
-projectsCollection = db["projects"]
-milestonesCollection = db["milestones"]
-tasksCollection = db["tasks"]
-sprintsCollection = db["sprints"]
+
+def getDb():
+    return client[os.environ.get("MONGO_DB", "kraken")]
 
 
 # This function is a dependency that will be used to convert a string in a request to an ObjectId.

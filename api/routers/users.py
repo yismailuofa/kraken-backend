@@ -1,12 +1,12 @@
 import os
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from jose import jwt
 from passlib.hash import bcrypt
 from pymongo import ReturnDocument
-from regex import F
+from pymongo.database import Database
 
-from ..database import usersCollection
+from ..database import getDb
 from ..schemas import EditableUser, User
 
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "kraken")
@@ -17,17 +17,17 @@ router = APIRouter()
 @router.post(
     "/register", status_code=status.HTTP_201_CREATED, response_model_by_alias=False
 )
-def register(editableUser: EditableUser) -> User:
+def register(editableUser: EditableUser, db: Database = Depends(getDb)) -> User:
     editableUser.password = hashPassword(editableUser.password)
 
     user = User(**editableUser.model_dump())
 
     if not (
-        result := usersCollection.insert_one(user.model_dump(exclude={"id"}))
+        result := db.users.insert_one(user.model_dump(exclude={"id"}))
     ).acknowledged:
         raise HTTPException(status_code=500, detail="Failed to create user")
 
-    userWithToken = usersCollection.find_one_and_update(
+    userWithToken = db.users.find_one_and_update(
         {"_id": result.inserted_id},
         {"$set": {"token": createToken(str(result.inserted_id))}},
         return_document=ReturnDocument.AFTER,
@@ -37,8 +37,8 @@ def register(editableUser: EditableUser) -> User:
 
 
 @router.post("/login", response_model_by_alias=False)
-def login(username: str, password: str) -> User:
-    user = usersCollection.find_one({"username": username})
+def login(username: str, password: str, db: Database = Depends(getDb)) -> User:
+    user = db.users.find_one({"username": username})
 
     if user is None or not verifyPassword(password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid username or password")

@@ -7,4 +7,8 @@
 
 ## Running the app on Docker
 
-1. `docker-compose up -d`
+1. Navigate to the root directory and run `docker-compose up -d`
+
+## Running tests
+
+1. Navigate to the root directory and run `python3 -m unittest`
