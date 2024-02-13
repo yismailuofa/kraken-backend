@@ -3,12 +3,15 @@
 ## Running the app locally
 
 1. Start mongoDB (depends on your OS)
-2. Start the api server with `uvicorn api.main:app --host 0.0.0.0 --port 80 --log-level debug --reload`
+2. Navigate to the root directory
+3. Start the api server with `uvicorn api.main:app --host 0.0.0.0 --port 80 --log-level debug --reload`
 
 ## Running the app on Docker
 
-1. Navigate to the root directory and run `docker-compose up -d`
+1. Navigate to the root directory
+2. Run `docker-compose up -d --build`
 
 ## Running tests
 
-1. Navigate to the root directory and run `python3 -m unittest`
+1. Navigate to the root directory
+2. Run `python3 -m unittest`
