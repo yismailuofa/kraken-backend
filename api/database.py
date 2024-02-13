@@ -16,6 +16,7 @@ tasksCollection = db["tasks"]
 sprintsCollection = db["sprints"]
 
 
+# This function is a dependency that will be used to convert a string in a request to an ObjectId.
 def toObjectId(id: str) -> ObjectId:
     if not ObjectId.is_valid(id):
         raise HTTPException(status_code=400, detail="Invalid ObjectId")

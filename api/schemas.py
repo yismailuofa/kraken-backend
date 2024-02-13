@@ -1,7 +1,9 @@
 import datetime
 from enum import Enum
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, Field
+from click import Option
+from pydantic import BaseModel, BeforeValidator, Field
 
 
 class Status(str, Enum):
@@ -23,11 +25,12 @@ class EditableUser(BaseModel):
 
 
 class User(EditableUser):
-    id: str
+    id: Annotated[str, Field(None, alias="_id"), BeforeValidator(str)]
     ownedProjects: list[str] = Field([], description="Project IDs that the user owns")
     joinedProjects: list[str] = Field(
         [], description="Project IDs that the user is a member of"
     )
+    token: str
 
 
 class Project(BaseModel):
