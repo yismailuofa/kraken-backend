@@ -22,16 +22,14 @@ def register(editableUser: EditableUser) -> User:
 
     user = User(**editableUser.model_dump())
 
-    result = usersCollection.insert_one(user.model_dump(exclude={"id"}))
-
-    if not result.acknowledged:
+    if not (
+        result := usersCollection.insert_one(user.model_dump(exclude={"id"}))
+    ).acknowledged:
         raise HTTPException(status_code=500, detail="Failed to create user")
-
-    token = createToken(str(result.inserted_id))
 
     userWithToken = usersCollection.find_one_and_update(
         {"_id": result.inserted_id},
-        {"$set": {"token": token}},
+        {"$set": {"token": createToken(str(result.inserted_id))}},
         return_document=ReturnDocument.AFTER,
     )
 
