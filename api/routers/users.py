@@ -77,8 +77,9 @@ def getCurrentUser(
             )
 
         return User(**user)
-
-    except Exception as e:
+    except HTTPException as e:
+        raise e
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )

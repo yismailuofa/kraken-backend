@@ -1,4 +1,5 @@
 import unittest
+from atexit import register
 
 from fastapi import status
 from fastapi.testclient import TestClient
@@ -24,8 +25,8 @@ class TestUsers(unittest.TestCase):
     def tearDown(self) -> None:
         self.mockDb.users.delete_many({})
 
-    def testRegister(self):
-        response = self.client.post(
+    def registerUser(self):
+        return self.client.post(
             "/users/register",
             json={
                 "username": self.testUser.username,
@@ -33,6 +34,18 @@ class TestUsers(unittest.TestCase):
                 "email": self.testUser.email,
             },
         )
+
+    def loginUser(self):
+        return self.client.post(
+            "/users/login",
+            params={
+                "username": self.testUser.username,
+                "password": self.testUser.password,
+            },
+        )
+
+    def testRegister(self):
+        response = self.registerUser()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         json = response.json()
@@ -54,52 +67,20 @@ class TestUsers(unittest.TestCase):
         self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     def testRegisterExisting(self):
-        response = self.client.post(
-            "/users/register",
-            json={
-                "username": self.testUser.username,
-                "password": self.testUser.password,
-                "email": self.testUser.email,
-            },
-        )
+        response = self.registerUser()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        response = self.client.post(
-            "/users/register",
-            json={
-                "username": self.testUser.username,
-                "password": self.testUser.password,
-                "email": self.testUser.email,
-            },
-        )
+        response = self.registerUser()
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def testLogin(self):
-        response = self.client.post(
-            "/users/register",
-            json={
-                "username": self.testUser.username,
-                "password": self.testUser.password,
-                "email": self.testUser.email,
-            },
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        registerResponse = self.registerUser()
+        self.assertEqual(registerResponse.status_code, status.HTTP_201_CREATED)
 
-        response = self.client.post(
-            "/users/login",
-            params={
-                "username": self.testUser.username,
-                "password": self.testUser.password,
-            },
-        )
+        response = self.loginUser()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        json = response.json()
-
-        self.assertEqual(json["username"], "test")
-
-        for v in json.values():
-            self.assertIsNotNone(v)
+        self.assertDictEqual(response.json(), registerResponse.json())
 
     def testLoginInvalidPwd(self):
         response = self.client.post(
@@ -120,6 +101,25 @@ class TestUsers(unittest.TestCase):
             },
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def testGetCurrentUser(self):
+        registerResponse = self.registerUser()
+        self.assertEqual(registerResponse.status_code, status.HTTP_201_CREATED)
+
+        response = self.loginUser()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        token = response.json()["token"]
+
+        response = self.client.get(
+            "/users/me",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        json = response.json()
+
+        self.assertDictEqual(json, registerResponse.json())
 
 
 if __name__ == "__main__":
