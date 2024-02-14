@@ -1,6 +1,9 @@
 import os
+from typing import Annotated
 
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 from passlib.hash import bcrypt
 from pymongo import ReturnDocument
@@ -12,6 +15,7 @@ from ..schemas import EditableUser, User
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "kraken")
 
 router = APIRouter()
+security = HTTPBearer()
 
 
 @router.post(
@@ -55,6 +59,34 @@ def login(username: str, password: str, db: Database = Depends(getDb)) -> User:
         )
 
     return User(**user)
+
+
+def getCurrentUser(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    db: Database = Depends(getDb),
+) -> User:
+    try:
+        token = credentials.credentials
+
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
+        userId = ObjectId(payload["sub"])
+
+        if not (user := db.users.find_one({"_id": userId})) or user["token"] != token:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+
+        return User(**user)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
+
+
+@router.get("/me", response_model_by_alias=False)
+def me(user: User = Depends(getCurrentUser)) -> User:
+    return user
 
 
 def hashPassword(password: str):

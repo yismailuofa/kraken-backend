@@ -5,12 +5,7 @@ from bson import ObjectId
 from fastapi import Depends, HTTPException
 from pymongo import MongoClient
 
-client = MongoClient(
-    os.environ.get("MONGO_HOST", "localhost"),
-    27017,
-    username=os.environ.get("MONGO_USER", "root"),
-    password=os.environ.get("MONGO_PASS", "root"),
-)
+client = MongoClient(os.environ.get("MONGO_URL", "localhost"), 27017)
 
 
 def getDb():
