@@ -7,9 +7,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 from passlib.hash import bcrypt
 from pymongo import ReturnDocument
-from pymongo.database import Database
 
-from ..database import getDb
+from ..database import DBDep
 from ..schemas import EditableUser, User
 
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "kraken")
@@ -21,7 +20,7 @@ security = HTTPBearer()
 @router.post(
     "/register", status_code=status.HTTP_201_CREATED, response_model_by_alias=False
 )
-def register(editableUser: EditableUser, db: Database = Depends(getDb)) -> User:
+def register(editableUser: EditableUser, db: DBDep) -> User:
     if db.users.find_one({"username": editableUser.username}):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
@@ -45,11 +44,13 @@ def register(editableUser: EditableUser, db: Database = Depends(getDb)) -> User:
         return_document=ReturnDocument.AFTER,
     )
 
+    print(userWithToken)
+
     return User(**userWithToken)
 
 
 @router.post("/login", response_model_by_alias=False)
-def login(username: str, password: str, db: Database = Depends(getDb)) -> User:
+def login(username: str, password: str, db: DBDep) -> User:
     user = db.users.find_one({"username": username})
 
     if user is None or not verifyPassword(password, user["password"]):
@@ -63,7 +64,7 @@ def login(username: str, password: str, db: Database = Depends(getDb)) -> User:
 
 def getCurrentUser(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
-    db: Database = Depends(getDb),
+    db: DBDep,
 ) -> User:
     try:
         token = credentials.credentials
@@ -85,8 +86,11 @@ def getCurrentUser(
         )
 
 
+UserDep = Annotated[User, Depends(getCurrentUser)]
+
+
 @router.get("/me", response_model_by_alias=False)
-def me(user: User = Depends(getCurrentUser)) -> User:
+def me(user: UserDep) -> User:
     return user
 
 

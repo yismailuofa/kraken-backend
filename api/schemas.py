@@ -2,7 +2,17 @@ import datetime
 from enum import Enum
 from typing import Annotated, Optional
 
+from bson import ObjectId
 from pydantic import BaseModel, BeforeValidator, Field
+
+"""
+This custom type does some helpful things:
+On create, the id field is not required, so it is set to None.
+When saving to the database we use the alias _id in serialization.
+When retrieving from the database we use the alias _id in deserialization.
+When returning the object we use the BeforeValidator to convert the ObjectId to a string.
+"""
+MongoID = Annotated[Optional[str], Field(validation_alias="_id"), BeforeValidator(str)]
 
 
 class Status(str, Enum):
@@ -24,19 +34,28 @@ class EditableUser(BaseModel):
 
 
 class User(EditableUser):
-    id: Annotated[Optional[str], Field(alias="_id"), BeforeValidator(str)] = None
+    id: MongoID = None
     ownedProjects: list[str] = []
     joinedProjects: list[str] = []
     token: Optional[str] = None
 
+    def oid(self) -> ObjectId:
+        return ObjectId(self.id)
 
-class Project(BaseModel):
-    id: str
+
+class CreateableProject(BaseModel):
     name: str
     description: str
+
+
+class EditableProject(CreateableProject):
     milestones: list[str] = []
     sprints: list[str] = []
-    createdAt: datetime.datetime
+    createdAt: datetime.datetime = datetime.datetime.now()
+
+
+class Project(EditableProject):
+    id: MongoID = None
 
 
 class Milestone(BaseModel):
@@ -46,6 +65,8 @@ class Milestone(BaseModel):
     dueDate: datetime.datetime
     status: Status
     tasks: list[str] = []
+    dependentMilestones: list[str] = []
+    dependentTasks: list[str] = []
 
 
 class BaseTask(BaseModel):
@@ -56,6 +77,8 @@ class BaseTask(BaseModel):
     status: Status
     priority: Priority
     assignedTo: Optional[str] = None
+    dependentMilestones: list[str] = []
+    dependentTasks: list[str] = []
 
 
 class Task(BaseTask):
