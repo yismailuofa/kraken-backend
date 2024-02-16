@@ -1,5 +1,4 @@
 import unittest
-from atexit import register
 
 from fastapi import status
 from fastapi.testclient import TestClient

@@ -44,8 +44,6 @@ def register(editableUser: EditableUser, db: DBDep) -> User:
         return_document=ReturnDocument.AFTER,
     )
 
-    print(userWithToken)
-
     return User(**userWithToken)
 
 

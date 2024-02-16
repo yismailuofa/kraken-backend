@@ -15,3 +15,4 @@
 
 1. Navigate to the root directory
 2. Run `python3 -m unittest`
+3. To run a specific file run you can specify it like so `python3 -m unittest api/tests/test_projects.py`
