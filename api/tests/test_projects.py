@@ -103,6 +103,22 @@ class TestProjects(unittest.TestCase):
         self.assertEqual(getResponse.status_code, status.HTTP_200_OK)
         self.assertDictEqual(createResponse.json(), getResponse.json())
 
+    def testGetProjectForbidden(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        getResponse = self.client.get(
+            f"/projects/{projectId}", headers=self.userToHeader(user2)
+        )
+
+        self.assertEqual(getResponse.status_code, status.HTTP_403_FORBIDDEN)
+
     def testAddUserToProject(self):
         user = self.createUser("test")
         user2 = self.createUser("test2")

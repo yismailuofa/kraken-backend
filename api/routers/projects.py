@@ -60,7 +60,13 @@ def getProjects(db: DBDep, user: UserDep) -> list[Project]:
 
 
 @router.get("/{id}", name="Get Project")
-def getProject(id: PyObjectId, db: DBDep) -> Project:
+def getProject(id: PyObjectId, db: DBDep, user: UserDep) -> Project:
+    if str(id) not in user.ownedProjects + user.joinedProjects:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
+        )
+
     if not (project := db.projects.find_one({"_id": id})):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
