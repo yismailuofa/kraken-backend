@@ -5,6 +5,8 @@ from typing import Annotated, Optional
 from bson import ObjectId
 from pydantic import BaseModel, BeforeValidator, Field
 
+# from api.util import now
+
 """
 This custom type does some helpful things:
 On create, the id field is not required, so it is set to None.
@@ -13,6 +15,11 @@ When retrieving from the database we use the alias _id in deserialization.
 When returning the object we use the BeforeValidator to convert the ObjectId to a string.
 """
 MongoID = Annotated[Optional[str], Field(validation_alias="_id"), BeforeValidator(str)]
+
+
+# Truncates the precision of a datetime to milliseconds to match the database.
+def now():
+    return datetime.datetime.now().replace(microsecond=0)
 
 
 class Status(str, Enum):
@@ -51,7 +58,7 @@ class CreateableProject(BaseModel):
 class EditableProject(CreateableProject):
     milestones: list[str] = []
     sprints: list[str] = []
-    createdAt: datetime.datetime = datetime.datetime.now()
+    createdAt: datetime.datetime = now()
 
 
 class Project(EditableProject):

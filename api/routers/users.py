@@ -1,20 +1,13 @@
-import os
-from typing import Annotated
-
-from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import APIRouter, HTTPException, status
 from jose import jwt
 from passlib.hash import bcrypt
 from pymongo import ReturnDocument
 
-from ..database import DBDep
-from ..schemas import EditableUser, User
-
-JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "kraken")
+from api.database import DBDep
+from api.schemas import EditableUser, User
+from api.util import JWT_SECRET_KEY, UserDep
 
 router = APIRouter()
-security = HTTPBearer()
 
 
 @router.post(
@@ -55,42 +48,15 @@ def register(editableUser: EditableUser, db: DBDep) -> User:
 
 @router.post("/login", response_model_by_alias=False)
 def login(username: str, password: str, db: DBDep) -> User:
-    user = db.users.find_one({"username": username})
-
-    if user is None or not verifyPassword(password, user["password"]):
+    if not (user := db.users.find_one({"username": username})) or not verifyPassword(
+        password, user["password"]
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
 
     return User(**user)
-
-
-def getCurrentUser(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
-    db: DBDep,
-) -> User:
-    try:
-        token = credentials.credentials
-
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
-        userId = ObjectId(payload["sub"])
-
-        if not (user := db.users.find_one({"_id": userId})) or user["token"] != token:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-            )
-
-        return User(**user)
-    except HTTPException as e:
-        raise e
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
-
-
-UserDep = Annotated[User, Depends(getCurrentUser)]
 
 
 @router.get("/me", response_model_by_alias=False)
