@@ -64,6 +64,7 @@ class Milestone(BaseModel):
     description: str
     dueDate: datetime.datetime
     status: Status
+    projectId: str
     tasks: list[str] = []
     dependentMilestones: list[str] = []
     dependentTasks: list[str] = []
@@ -75,6 +76,7 @@ class BaseTask(BaseModel):
     createdAt: datetime.datetime
     dueDate: datetime.datetime
     status: Status
+    projectId: str
     priority: Priority
     assignedTo: Optional[str] = None
     dependentMilestones: list[str] = []

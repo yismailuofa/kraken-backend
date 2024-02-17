@@ -31,18 +31,24 @@ def register(editableUser: EditableUser, db: DBDep) -> User:
     user = User(**editableUser.model_dump())
 
     if not (
-        result := db.users.insert_one(user.model_dump(exclude={"id"}))
+        insertedUserResult := db.users.insert_one(user.model_dump(exclude={"id"}))
     ).acknowledged:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user",
         )
 
-    userWithToken = db.users.find_one_and_update(
-        {"_id": result.inserted_id},
-        {"$set": {"token": createToken(str(result.inserted_id))}},
-        return_document=ReturnDocument.AFTER,
-    )
+    if not (
+        userWithToken := db.users.find_one_and_update(
+            {"_id": insertedUserResult.inserted_id},
+            {"$set": {"token": createToken(str(insertedUserResult.inserted_id))}},
+            return_document=ReturnDocument.AFTER,
+        )
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create user",
+        )
 
     return User(**userWithToken)
 
@@ -90,6 +96,27 @@ UserDep = Annotated[User, Depends(getCurrentUser)]
 @router.get("/me", response_model_by_alias=False)
 def me(user: UserDep) -> User:
     return user
+
+
+@router.put("/password/reset", response_model_by_alias=False, name="Reset Password")
+def resetPassword(
+    newPassword: str,
+    db: DBDep,
+    user: UserDep,
+) -> User:
+    if not (
+        updatedUser := db.users.find_one_and_update(
+            {"_id": user.oid()},
+            {"$set": {"password": hashPassword(newPassword)}},
+            return_document=ReturnDocument.AFTER,
+        )
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update password",
+        )
+
+    return User(**updatedUser)
 
 
 def hashPassword(password: str):

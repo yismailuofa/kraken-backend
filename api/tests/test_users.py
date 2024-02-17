@@ -120,6 +120,28 @@ class TestUsers(unittest.TestCase):
 
         self.assertDictEqual(json, registerResponse.json())
 
+    def testChangePassword(self):
+        registerResponse = self.registerUser()
+        self.assertEqual(registerResponse.status_code, status.HTTP_201_CREATED)
+
+        token = registerResponse.json()["token"]
+
+        response = self.client.put(
+            "/users/password/reset",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"newPassword": "newpassword"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.post(
+            "/users/login",
+            params={
+                "username": self.testUser.username,
+                "password": "newpassword",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
 
 if __name__ == "__main__":
     unittest.main()
