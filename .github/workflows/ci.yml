@@ -22,7 +22,10 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
-          run: pip install --upgrade -r requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade -r requirements.txt
 
       - name: Test with unittest
         run: |
