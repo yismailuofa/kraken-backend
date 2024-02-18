@@ -1,6 +1,6 @@
 #### For the frontend repo see: [kraken-frontend](https://github.com/yismailuofa/kraken-frontend)
 
-## Running the app locally
+## Running the App locally
 
 1. Start mongoDB (depends on your OS)
 2. Navigate to the root directory
