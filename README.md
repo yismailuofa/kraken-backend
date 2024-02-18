@@ -11,7 +11,7 @@
 1. Navigate to the root directory
 2. Run `docker-compose up -d --build`
 
-## Running tests
+## Running Tests
 
 1. Navigate to the root directory
 2. Run `python3 -m unittest`
