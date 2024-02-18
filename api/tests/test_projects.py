@@ -1,5 +1,4 @@
 import datetime
-import time
 import unittest
 
 from fastapi import status
@@ -8,6 +7,7 @@ from mongomock import MongoClient
 
 from api.database import getDb
 from api.main import app
+from api.schemas import User, UserView
 
 
 class TestProjects(unittest.TestCase):
@@ -144,6 +144,24 @@ class TestProjects(unittest.TestCase):
         self.assertEqual(user2GetResponse.status_code, status.HTTP_200_OK)
         self.assertListEqual(user2GetResponse.json()["joinedProjects"], [projectId])
 
+    def testAddUserToProjectForbidden(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        addUserResponse = self.client.post(
+            "/projects/users/add",
+            headers=self.userToHeader(user2),
+            params={"projectId": projectId, "username": user["username"]},
+        )
+
+        self.assertEqual(addUserResponse.status_code, status.HTTP_403_FORBIDDEN)
+
     def testRemoveUserFromProject(self):
         user = self.createUser("test")
         user2 = self.createUser("test2")
@@ -183,3 +201,46 @@ class TestProjects(unittest.TestCase):
 
         self.assertEqual(user2GetResponse.status_code, status.HTTP_200_OK)
         self.assertListEqual(user2GetResponse.json()["joinedProjects"], [])
+
+    def testRemoveUserFromProjectForbidden(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        removeUserResponse = self.client.delete(
+            "/projects/users/remove",
+            headers=self.userToHeader(user2),
+            params={"projectId": projectId, "username": user["username"]},
+        )
+
+        self.assertEqual(removeUserResponse.status_code, status.HTTP_403_FORBIDDEN)
+
+    def testGetProjectUsers(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        f = addUserResponse = self.client.post(
+            "/projects/users/add",
+            headers=self.userToHeader(user),
+            params={"projectId": projectId, "username": user2["username"]},
+        )
+
+        self.assertEqual(addUserResponse.status_code, status.HTTP_200_OK)
+
+        getResponse = self.client.get(
+            f"/projects/{projectId}/users", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(getResponse.status_code, status.HTTP_200_OK)
+        self.assertListEqual(getResponse.json(), [UserView(**user2).model_dump()])

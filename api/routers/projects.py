@@ -1,13 +1,10 @@
-from typing import Annotated
-
 from bson import ObjectId
-from fastapi import APIRouter, HTTPException, Path, status
+from fastapi import APIRouter, HTTPException, status
 from pymongo import ReturnDocument
 
 from api.database import DBDep
 from api.routers.users import UserDep
-from api.schemas import CreateableProject, Project, User
-from api.util import PyObjectId
+from api.schemas import CreateableProject, Project, User, UserView
 
 router = APIRouter()
 
@@ -60,14 +57,14 @@ def getProjects(db: DBDep, user: UserDep) -> list[Project]:
 
 
 @router.get("/{id}", name="Get Project")
-def getProject(id: PyObjectId, db: DBDep, user: UserDep) -> Project:
-    if str(id) not in user.ownedProjects + user.joinedProjects:
+def getProject(id: str, db: DBDep, user: UserDep) -> Project:
+    if id not in user.ownedProjects + user.joinedProjects:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User does not have access to project",
         )
 
-    if not (project := db.projects.find_one({"_id": id})):
+    if not (project := db.projects.find_one({"_id": ObjectId(id)})):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
@@ -82,7 +79,7 @@ def addUserToProject(
     username: str,
     db: DBDep,
     user: UserDep,
-) -> User:
+) -> UserView:
     if projectId not in user.ownedProjects:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -107,7 +104,7 @@ def addUserToProject(
             detail="User not found",
         )
 
-    return User(**updatedUser)
+    return UserView(**updatedUser)
 
 
 @router.delete("/users/remove", name="Remove User from Project")
@@ -116,7 +113,7 @@ def removeUserFromProject(
     username: str,
     db: DBDep,
     user: UserDep,
-) -> User:
+) -> UserView:
     if projectId not in user.ownedProjects:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -141,4 +138,21 @@ def removeUserFromProject(
             detail="User not found",
         )
 
-    return User(**updatedUser)
+    return UserView(**updatedUser)
+
+
+@router.get("/{id}/users", name="Get Project Users")
+def getProjectUsers(id: str, db: DBDep, user: UserDep) -> list[UserView]:
+    if id not in user.ownedProjects:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
+        )
+
+    if not db.projects.find_one({"_id": ObjectId(id)}):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    return [UserView(**user) for user in db.users.find({"joinedProjects": id})]

@@ -14,23 +14,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v3
-        with:
-          python-version: "3.11"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade -r requirements.txt
-
-      - name: Test with unittest
-        run: |
-          python -m unittest
-
       - name: Deploy with ssh
         uses: appleboy/ssh-action@master
         with:

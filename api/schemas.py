@@ -3,9 +3,7 @@ from enum import Enum
 from typing import Annotated, Optional
 
 from bson import ObjectId
-from pydantic import BaseModel, BeforeValidator, Field
-
-# from api.util import now
+from pydantic import AliasChoices, BaseModel, BeforeValidator, Field
 
 """
 This custom type does some helpful things:
@@ -14,7 +12,11 @@ When saving to the database we use the alias _id in serialization.
 When retrieving from the database we use the alias _id in deserialization.
 When returning the object we use the BeforeValidator to convert the ObjectId to a string.
 """
-MongoID = Annotated[Optional[str], Field(validation_alias="_id"), BeforeValidator(str)]
+MongoID = Annotated[
+    Optional[str],
+    Field(validation_alias=AliasChoices("_id", "id")),
+    BeforeValidator(str),
+]
 
 
 # Truncates the precision of a datetime to milliseconds to match the database.
@@ -32,6 +34,13 @@ class Priority(str, Enum):
     low = "Low"
     medium = "Medium"
     high = "High"
+
+
+class UserView(BaseModel):
+
+    id: MongoID
+    username: str
+    email: str
 
 
 class CreatableUser(BaseModel):
