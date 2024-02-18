@@ -4,7 +4,7 @@ from passlib.hash import bcrypt
 from pymongo import ReturnDocument
 
 from api.database import DBDep
-from api.schemas import EditableUser, User
+from api.schemas import CreatableUser, User
 from api.util import JWT_SECRET_KEY, UserDep
 
 router = APIRouter()
@@ -13,15 +13,15 @@ router = APIRouter()
 @router.post(
     "/register", status_code=status.HTTP_201_CREATED, response_model_by_alias=False
 )
-def register(editableUser: EditableUser, db: DBDep) -> User:
-    if db.users.find_one({"username": editableUser.username}):
+def register(createableUser: CreatableUser, db: DBDep) -> User:
+    if db.users.find_one({"username": createableUser.username}):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
         )
 
-    editableUser.password = hashPassword(editableUser.password)
+    createableUser.password = hashPassword(createableUser.password)
 
-    user = User(**editableUser.model_dump())
+    user = User(**createableUser.model_dump())
 
     if not (
         insertedUserResult := db.users.insert_one(user.model_dump(exclude={"id"}))
@@ -64,7 +64,7 @@ def me(user: UserDep) -> User:
     return user
 
 
-@router.put("/password/reset", response_model_by_alias=False, name="Reset Password")
+@router.patch("/password/reset", response_model_by_alias=False, name="Reset Password")
 def resetPassword(
     newPassword: str,
     db: DBDep,

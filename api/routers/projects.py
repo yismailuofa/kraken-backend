@@ -108,3 +108,37 @@ def addUserToProject(
         )
 
     return User(**updatedUser)
+
+
+@router.delete("/users/remove", name="Remove User from Project")
+def removeUserFromProject(
+    projectId: str,
+    username: str,
+    db: DBDep,
+    user: UserDep,
+) -> User:
+    if projectId not in user.ownedProjects:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not own project",
+        )
+
+    if not db.projects.find_one({"_id": ObjectId(projectId)}):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    if not (
+        updatedUser := db.users.find_one_and_update(
+            {"username": username},
+            {"$pull": {"joinedProjects": projectId}},
+            return_document=ReturnDocument.AFTER,
+        )
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    return User(**updatedUser)

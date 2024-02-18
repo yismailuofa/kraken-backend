@@ -143,3 +143,43 @@ class TestProjects(unittest.TestCase):
 
         self.assertEqual(user2GetResponse.status_code, status.HTTP_200_OK)
         self.assertListEqual(user2GetResponse.json()["joinedProjects"], [projectId])
+
+    def testRemoveUserFromProject(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        addUserResponse = self.client.post(
+            "/projects/users/add",
+            headers=self.userToHeader(user),
+            params={"projectId": projectId, "username": user2["username"]},
+        )
+
+        self.assertEqual(addUserResponse.status_code, status.HTTP_200_OK)
+
+        user2GetResponse = self.client.get(
+            "/users/me", headers=self.userToHeader(user2)
+        )
+
+        self.assertEqual(user2GetResponse.status_code, status.HTTP_200_OK)
+        self.assertListEqual(user2GetResponse.json()["joinedProjects"], [projectId])
+
+        removeUserResponse = self.client.delete(
+            "/projects/users/remove",
+            headers=self.userToHeader(user),
+            params={"projectId": projectId, "username": user2["username"]},
+        )
+
+        self.assertEqual(removeUserResponse.status_code, status.HTTP_200_OK)
+
+        user2GetResponse = self.client.get(
+            "/users/me", headers=self.userToHeader(user2)
+        )
+
+        self.assertEqual(user2GetResponse.status_code, status.HTTP_200_OK)
+        self.assertListEqual(user2GetResponse.json()["joinedProjects"], [])

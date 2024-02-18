@@ -126,7 +126,7 @@ class TestUsers(unittest.TestCase):
 
         token = registerResponse.json()["token"]
 
-        response = self.client.put(
+        response = self.client.patch(
             "/users/password/reset",
             headers={"Authorization": f"Bearer {token}"},
             params={"newPassword": "newpassword"},

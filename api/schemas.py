@@ -34,13 +34,13 @@ class Priority(str, Enum):
     high = "High"
 
 
-class EditableUser(BaseModel):
+class CreatableUser(BaseModel):
     username: str
     password: str
     email: str
 
 
-class User(EditableUser):
+class User(CreatableUser):
     id: MongoID = None
     ownedProjects: list[str] = []
     joinedProjects: list[str] = []
