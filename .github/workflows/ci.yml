@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-      - uses: actions/checkout@v3
+        uses: actions/checkout@v3
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v3
@@ -30,8 +30,8 @@ jobs:
         run: |
           python -m unittest
 
-      -name: Deploy with ssh 
-       with:
+      - name: Deploy with ssh
+        with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
