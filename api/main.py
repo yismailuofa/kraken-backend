@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .routers import router
 
-app = FastAPI(title="Kraken API")
+app = FastAPI(title="Kraken API", swagger_ui_parameters={"persistAuthorization": True})
 
 app.add_middleware(
     CORSMiddleware,

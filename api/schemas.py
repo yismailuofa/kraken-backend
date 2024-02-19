@@ -37,7 +37,6 @@ class Priority(str, Enum):
 
 
 class UserView(BaseModel):
-
     id: MongoID
     username: str
     email: str
