@@ -73,20 +73,9 @@ def getProject(id: str, db: DBDep, user: UserDep) -> Project:
     return Project(**project)
 
 
-@router.post("/users/add", name="Add User to Project")
-def addUserToProject(
-    projectId: str,
-    username: str,
-    db: DBDep,
-    user: UserDep,
-) -> UserView:
-    if projectId not in user.ownedProjects:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User does not own project",
-        )
-
-    if not db.projects.find_one({"_id": ObjectId(projectId)}):
+@router.post("/{id}/join", name="Join Project")
+def joinProject(id: str, db: DBDep, user: UserDep) -> User:
+    if not db.projects.find_one({"_id": ObjectId(id)}):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
@@ -94,33 +83,22 @@ def addUserToProject(
 
     if not (
         updatedUser := db.users.find_one_and_update(
-            {"username": username},
-            {"$addToSet": {"joinedProjects": projectId}},
+            {"_id": user.oid()},
+            {"$push": {"joinedProjects": id}},
             return_document=ReturnDocument.AFTER,
         )
     ):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to join project",
         )
 
-    return UserView(**updatedUser)
+    return User(**updatedUser)
 
 
-@router.delete("/users/remove", name="Remove User from Project")
-def removeUserFromProject(
-    projectId: str,
-    username: str,
-    db: DBDep,
-    user: UserDep,
-) -> UserView:
-    if projectId not in user.ownedProjects:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User does not own project",
-        )
-
-    if not db.projects.find_one({"_id": ObjectId(projectId)}):
+@router.delete("/{id}/leave", name="Leave Project")
+def leaveProject(id: str, db: DBDep, user: UserDep) -> User:
+    if not db.projects.find_one({"_id": ObjectId(id)}):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
@@ -128,17 +106,17 @@ def removeUserFromProject(
 
     if not (
         updatedUser := db.users.find_one_and_update(
-            {"username": username},
-            {"$pull": {"joinedProjects": projectId}},
+            {"_id": user.oid()},
+            {"$pull": {"joinedProjects": id}},
             return_document=ReturnDocument.AFTER,
         )
     ):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to leave project",
         )
 
-    return UserView(**updatedUser)
+    return User(**updatedUser)
 
 
 @router.get("/{id}/users", name="Get Project Users")
