@@ -119,6 +119,64 @@ def leaveProject(id: str, db: DBDep, user: UserDep) -> User:
     return User(**updatedUser)
 
 
+@router.post("/{id}/users", name="Add User to Project")
+def addProjectUser(id: str, email: str, user: UserDep, db: DBDep) -> UserView:
+    if id not in user.ownedProjects:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
+        )
+
+    if not db.projects.find_one({"_id": ObjectId(id)}):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    if not (
+        updatedUser := db.users.find_one_and_update(
+            {"email": email},
+            {"$push": {"joinedProjects": id}},
+            return_document=ReturnDocument.AFTER,
+        )
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to add user to project",
+        )
+
+    return UserView(**updatedUser)
+
+
+@router.delete("/{id}/users", name="Remove User from Project")
+def removeProjectUser(id: str, userID: str, user: UserDep, db: DBDep) -> UserView:
+    if id not in user.ownedProjects:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
+        )
+
+    if not db.projects.find_one({"_id": ObjectId(id)}):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    if not (
+        updatedUser := db.users.find_one_and_update(
+            {"_id": ObjectId(userID)},
+            {"$pull": {"joinedProjects": id}},
+            return_document=ReturnDocument.AFTER,
+        )
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to remove user from project",
+        )
+
+    return UserView(**updatedUser)
+
+
 @router.get("/{id}/users", name="Get Project Users")
 def getProjectUsers(id: str, db: DBDep, user: UserDep) -> list[UserView]:
     if id not in user.ownedProjects:

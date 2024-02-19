@@ -167,6 +167,97 @@ class TestProjects(unittest.TestCase):
         self.assertEqual(userResponse.status_code, status.HTTP_200_OK)
         self.assertEqual(userResponse.json()["joinedProjects"], [])
 
+    def testAddProjectUser(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        addUserResponse = self.client.post(
+            f"/projects/{projectId}/users",
+            headers=self.userToHeader(user),
+            params={"email": user2["email"]},
+        )
+
+        self.assertEqual(addUserResponse.status_code, status.HTTP_200_OK)
+
+        userResponse = self.client.get("/users/me", headers=self.userToHeader(user2))
+
+        self.assertEqual(userResponse.status_code, status.HTTP_200_OK)
+        self.assertEqual(userResponse.json()["joinedProjects"], [projectId])
+
+    def testAddProjectUserForbidden(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+        user3 = self.createUser("test3")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        addUserResponse = self.client.post(
+            f"/projects/{projectId}/users",
+            headers=self.userToHeader(user2),
+            params={"email": user3["email"]},
+        )
+
+        self.assertEqual(addUserResponse.status_code, status.HTTP_403_FORBIDDEN)
+
+    def testRemoveProjectUser(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        addUserResponse = self.client.post(
+            f"/projects/{projectId}/users",
+            headers=self.userToHeader(user),
+            params={"email": user2["email"]},
+        )
+
+        self.assertEqual(addUserResponse.status_code, status.HTTP_200_OK)
+
+        removeUserResponse = self.client.delete(
+            f"/projects/{projectId}/users",
+            headers=self.userToHeader(user),
+            params={"userID": user2["id"]},
+        )
+
+        self.assertEqual(removeUserResponse.status_code, status.HTTP_200_OK)
+
+        userResponse = self.client.get("/users/me", headers=self.userToHeader(user2))
+
+        self.assertEqual(userResponse.status_code, status.HTTP_200_OK)
+        self.assertEqual(userResponse.json()["joinedProjects"], [])
+
+    def testRemoveProjectUserForbidden(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        removeUserResponse = self.client.delete(
+            f"/projects/{projectId}/users",
+            headers=self.userToHeader(user2),
+            params={"userID": user["id"]},
+        )
+
+        self.assertEqual(removeUserResponse.status_code, status.HTTP_403_FORBIDDEN)
+
     def testGetProjectUsers(self):
         user = self.createUser("test")
         user2 = self.createUser("test2")
@@ -177,10 +268,10 @@ class TestProjects(unittest.TestCase):
 
         projectId = createResponse.json()["id"]
 
-        f = addUserResponse = self.client.post(
-            "/projects/users/add",
+        addUserResponse = self.client.post(
+            f"/projects/{projectId}/users",
             headers=self.userToHeader(user),
-            params={"projectId": projectId, "username": user2["username"]},
+            params={"email": user2["email"]},
         )
 
         self.assertEqual(addUserResponse.status_code, status.HTTP_200_OK)
