@@ -1,5 +1,6 @@
 import datetime
 import unittest
+from hmac import new
 
 from fastapi import status
 from fastapi.testclient import TestClient
@@ -118,6 +119,47 @@ class TestProjects(unittest.TestCase):
         )
 
         self.assertEqual(getResponse.status_code, status.HTTP_403_FORBIDDEN)
+
+    def testUpdateProject(self):
+        user = self.createUser("test")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        newName, newDescription = "newName", "newDescription"
+        updateResponse = self.client.patch(
+            f"/projects/{projectId}",
+            json={"name": newName, "description": newDescription},
+            headers=self.userToHeader(user),
+        )
+
+        self.assertEqual(updateResponse.status_code, status.HTTP_200_OK)
+
+        json = updateResponse.json()
+        self.assertEqual(json["name"], newName)
+        self.assertEqual(json["description"], newDescription)
+
+    def testUpdateProjectForbidden(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        newName, newDescription = "newName", "newDescription"
+        updateResponse = self.client.patch(
+            f"/projects/{projectId}",
+            json={"name": newName, "description": newDescription},
+            headers=self.userToHeader(user2),
+        )
+
+        self.assertEqual(updateResponse.status_code, status.HTTP_403_FORBIDDEN)
 
     def testJoinProject(self):
         user = self.createUser("test")

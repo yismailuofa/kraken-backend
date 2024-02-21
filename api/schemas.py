@@ -63,14 +63,14 @@ class CreateableProject(BaseModel):
     description: str
 
 
-class EditableProject(CreateableProject):
-    milestones: list[str] = []
-    sprints: list[str] = []
-    createdAt: datetime.datetime = now()
+class UpdateableProject(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
 
 
-class Project(EditableProject):
+class Project(CreateableProject):
     id: MongoID = None
+    createdAt: datetime.datetime = now()
 
 
 class Milestone(BaseModel):
