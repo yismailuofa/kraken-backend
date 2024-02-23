@@ -25,7 +25,7 @@ def now():
 
 
 class Status(str, Enum):
-    open = "Open"
+    todo = "Todo"
     inProgress = "In Progress"
     completed = "Completed"
 
@@ -57,6 +57,9 @@ class User(CreatableUser):
     def oid(self) -> ObjectId:
         return ObjectId(self.id)
 
+    def projects(self):
+        return self.ownedProjects + self.joinedProjects
+
 
 class CreateableProject(BaseModel):
     name: str
@@ -73,13 +76,16 @@ class Project(CreateableProject):
     createdAt: datetime.datetime = now()
 
 
-class Milestone(BaseModel):
-    id: str
+class CreateableMilestone(BaseModel):
     name: str
     description: str
     dueDate: datetime.datetime
-    status: Status
     projectId: str
+
+
+class Milestone(CreateableMilestone):
+    id: MongoID = None
+    status: Status = Status.todo
     tasks: list[str] = []
     dependentMilestones: list[str] = []
     dependentTasks: list[str] = []

@@ -1,6 +1,5 @@
 import datetime
 import unittest
-from hmac import new
 
 from fastapi import status
 from fastapi.testclient import TestClient
@@ -8,7 +7,7 @@ from mongomock import MongoClient
 
 from api.database import getDb
 from api.main import app
-from api.schemas import User, UserView
+from api.schemas import UserView
 
 
 class TestProjects(unittest.TestCase):
@@ -31,10 +30,6 @@ class TestProjects(unittest.TestCase):
     def userToHeader(self, user):
         return {"Authorization": f"Bearer {user['token']}"}
 
-    def tearDown(self) -> None:
-        self.mockDb.projects.delete_many({})
-        self.mockDb.users.delete_many({})
-
     def createProject(self, user, name, description):
         return self.client.post(
             "/projects/",
@@ -44,6 +39,10 @@ class TestProjects(unittest.TestCase):
             },
             headers=self.userToHeader(user),
         )
+
+    def tearDown(self) -> None:
+        self.mockDb.users.delete_many({})
+        self.mockDb.projects.delete_many({})
 
     def testCreateProject(self):
         projectName = "test"
