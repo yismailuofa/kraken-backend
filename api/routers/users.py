@@ -1,14 +1,13 @@
 import os
 from typing import Annotated
 
-from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 from passlib.hash import bcrypt
 from pymongo import ReturnDocument
 
-from api.database import DBDep
+from api.database import DBDep, findUserAndUpdate, findUserById, insertUser
 from api.schemas import CreatableUser, User
 
 router = APIRouter()
@@ -29,9 +28,7 @@ def register(createableUser: CreatableUser, db: DBDep) -> User:
 
     user = User(**createableUser.model_dump())
 
-    if not (
-        insertedUserResult := db.users.insert_one(user.model_dump(exclude={"id"}))
-    ).acknowledged:
+    if not (insertedUserResult := insertUser(db, user)).acknowledged:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user",
@@ -76,9 +73,8 @@ def getCurrentUser(
         token = credentials.credentials
 
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
-        userId = ObjectId(payload["sub"])
 
-        if not (user := db.users.find_one({"_id": userId})) or user["token"] != token:
+        if not (user := findUserById(db, payload["sub"])) or user["token"] != token:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
@@ -107,10 +103,8 @@ def resetPassword(
     user: UserDep,
 ) -> User:
     if not (
-        updatedUser := db.users.find_one_and_update(
-            {"_id": user.oid()},
-            {"$set": {"password": hashPassword(newPassword)}},
-            return_document=ReturnDocument.AFTER,
+        updatedUser := findUserAndUpdate(
+            db, user, {"$set": {"password": hashPassword(newPassword)}}
         )
     ):
         raise HTTPException(

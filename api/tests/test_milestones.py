@@ -101,3 +101,61 @@ class TestMilestones(unittest.TestCase):
         )
 
         self.assertEqual(milestoneResponse.status_code, status.HTTP_403_FORBIDDEN)
+
+    def testGetMilestone(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test").json()
+
+        milestoneName = "test"
+        milestoneDescription = "test"
+        milestoneDueDate = "2001-10-01T00:00:00"
+
+        createMilestoneResponse = self.createMilestone(
+            user, project["id"], milestoneName, milestoneDescription, milestoneDueDate
+        )
+
+        self.assertEqual(createMilestoneResponse.status_code, status.HTTP_200_OK)
+
+        milestoneResponse = self.client.get(
+            f"/milestones/{createMilestoneResponse.json()['id']}",
+            headers=self.userToHeader(user),
+        )
+
+        self.assertEqual(milestoneResponse.status_code, status.HTTP_200_OK)
+
+        milestone = milestoneResponse.json()
+
+        self.assertEqual(milestone["projectId"], project["id"])
+        self.assertEqual(milestone["name"], milestoneName)
+        self.assertEqual(milestone["description"], milestoneDescription)
+        self.assertEqual(milestone["dueDate"], milestoneDueDate)
+
+        for v in milestone.values():
+            self.assertIsNotNone(v)
+
+    def testGetMilestoneMilestoneNotFound(self):
+        user = self.createUser("test")
+
+        milestoneResponse = self.client.get(
+            f"/milestones/{str(ObjectId())}",
+            headers=self.userToHeader(user),
+        )
+
+        self.assertEqual(milestoneResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+    def testGetMilestoneUserNoAccess(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test").json()
+
+        otherUser = self.createUser("other")
+
+        createMilestoneResponse = self.createMilestone(
+            user, project["id"], "test", "test", "2001-10-01T00:00:00"
+        )
+
+        milestoneResponse = self.client.get(
+            f"/milestones/{createMilestoneResponse.json()['id']}",
+            headers=self.userToHeader(otherUser),
+        )
+
+        self.assertEqual(milestoneResponse.status_code, status.HTTP_403_FORBIDDEN)

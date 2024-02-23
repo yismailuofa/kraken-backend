@@ -36,6 +36,7 @@ class Priority(str, Enum):
     high = "High"
 
 
+# USER
 class UserView(BaseModel):
     id: MongoID
     username: str
@@ -57,10 +58,17 @@ class User(CreatableUser):
     def oid(self) -> ObjectId:
         return ObjectId(self.id)
 
-    def projects(self):
+    def canAccess(self, id: str) -> bool:
+        return id in self.ownedProjects + self.joinedProjects
+
+    def isAdmin(self, id: str) -> bool:
+        return id in self.ownedProjects
+
+    def projects(self) -> list[str]:
         return self.ownedProjects + self.joinedProjects
 
 
+# PROJECT
 class CreateableProject(BaseModel):
     name: str
     description: str
@@ -75,7 +83,11 @@ class Project(CreateableProject):
     id: MongoID = None
     createdAt: datetime.datetime = now()
 
+    def oid(self) -> ObjectId:
+        return ObjectId(self.id)
 
+
+# MILESTONE
 class CreateableMilestone(BaseModel):
     name: str
     description: str
@@ -91,6 +103,7 @@ class Milestone(CreateableMilestone):
     dependentTasks: list[str] = []
 
 
+# TASK
 class BaseTask(BaseModel):
     name: str
     description: str
@@ -109,6 +122,7 @@ class Task(BaseTask):
     qaTask: BaseTask
 
 
+# SPRINT
 class Sprint(BaseModel):
     id: str
     name: str

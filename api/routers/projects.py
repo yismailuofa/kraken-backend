@@ -1,8 +1,15 @@
-from bson import ObjectId
 from fastapi import APIRouter, HTTPException, status
-from pymongo import ReturnDocument
 
-from api.database import DBDep
+from api.database import (
+    DBDep,
+    findProjectAndUpdate,
+    findProjectById,
+    findUserAndUpdate,
+    findUserAndUpdateByEmail,
+    findUserAndUpdateById,
+    insertProject,
+    toObjectId,
+)
 from api.routers.users import UserDep
 from api.schemas import CreateableProject, Project, UpdateableProject, User, UserView
 
@@ -17,9 +24,7 @@ def createProject(
 ) -> Project:
 
     project = Project(**createableProject.model_dump())
-    if not (
-        result := db.projects.insert_one(project.model_dump(exclude={"id"}))
-    ).acknowledged:
+    if not (result := insertProject(db, project)).acknowledged:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create project",
@@ -27,11 +32,11 @@ def createProject(
 
     project.id = str(result.inserted_id)
 
-    if not (
-        result := db.users.update_one(
-            {"_id": user.oid()}, {"$push": {"ownedProjects": project.id}}
-        )
-    ).modified_count:
+    if not findUserAndUpdate(
+        db,
+        user,
+        {"$push": {"ownedProjects": project.id}},
+    ):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user",
@@ -45,26 +50,20 @@ def getProjects(db: DBDep, user: UserDep) -> list[Project]:
     return [
         Project(**project)
         for project in db.projects.find(
-            {
-                "_id": {
-                    "$in": [
-                        ObjectId(id) for id in user.ownedProjects + user.joinedProjects
-                    ]
-                }
-            }
+            {"_id": {"$in": [toObjectId(id) for id in user.projects()]}}
         )
     ]
 
 
 @router.get("/{id}", name="Get Project")
 def getProject(id: str, db: DBDep, user: UserDep) -> Project:
-    if id not in user.ownedProjects + user.joinedProjects:
+    if not user.canAccess(id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User does not have access to project",
         )
 
-    if not (project := db.projects.find_one({"_id": ObjectId(id)})):
+    if not (project := findProjectById(db, id)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
@@ -77,23 +76,23 @@ def getProject(id: str, db: DBDep, user: UserDep) -> Project:
 def updateProject(
     id: str, updateableProject: UpdateableProject, db: DBDep, user: UserDep
 ) -> Project:
-    if id not in user.ownedProjects:
+    if not user.isAdmin(id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User does not have access to project",
         )
 
-    if not db.projects.find_one({"_id": ObjectId(id)}):
+    if not findProjectById(db, id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
 
     if not (
-        result := db.projects.find_one_and_update(
-            {"_id": ObjectId(id)},
+        result := findProjectAndUpdate(
+            db,
+            id,
             {"$set": updateableProject.model_dump(exclude_none=True)},
-            return_document=ReturnDocument.AFTER,
         )
     ):
         raise HTTPException(
@@ -106,17 +105,17 @@ def updateProject(
 
 @router.post("/{id}/join", name="Join Project")
 def joinProject(id: str, db: DBDep, user: UserDep) -> User:
-    if not db.projects.find_one({"_id": ObjectId(id)}):
+    if not findProjectById(db, id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
 
     if not (
-        updatedUser := db.users.find_one_and_update(
-            {"_id": user.oid()},
+        updatedUser := findUserAndUpdate(
+            db,
+            user,
             {"$push": {"joinedProjects": id}},
-            return_document=ReturnDocument.AFTER,
         )
     ):
         raise HTTPException(
@@ -129,17 +128,17 @@ def joinProject(id: str, db: DBDep, user: UserDep) -> User:
 
 @router.delete("/{id}/leave", name="Leave Project")
 def leaveProject(id: str, db: DBDep, user: UserDep) -> User:
-    if not db.projects.find_one({"_id": ObjectId(id)}):
+    if not findProjectById(db, id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
 
     if not (
-        updatedUser := db.users.find_one_and_update(
-            {"_id": user.oid()},
+        updatedUser := findUserAndUpdate(
+            db,
+            user,
             {"$pull": {"joinedProjects": id}},
-            return_document=ReturnDocument.AFTER,
         )
     ):
         raise HTTPException(
@@ -152,23 +151,23 @@ def leaveProject(id: str, db: DBDep, user: UserDep) -> User:
 
 @router.post("/{id}/users", name="Add User to Project")
 def addProjectUser(id: str, email: str, user: UserDep, db: DBDep) -> UserView:
-    if id not in user.ownedProjects:
+    if not user.isAdmin(id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User does not have access to project",
         )
 
-    if not db.projects.find_one({"_id": ObjectId(id)}):
+    if not findProjectById(db, id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
 
     if not (
-        updatedUser := db.users.find_one_and_update(
-            {"email": email},
+        updatedUser := findUserAndUpdateByEmail(
+            db,
+            email,
             {"$push": {"joinedProjects": id}},
-            return_document=ReturnDocument.AFTER,
         )
     ):
         raise HTTPException(
@@ -181,23 +180,23 @@ def addProjectUser(id: str, email: str, user: UserDep, db: DBDep) -> UserView:
 
 @router.delete("/{id}/users", name="Remove User from Project")
 def removeProjectUser(id: str, userID: str, user: UserDep, db: DBDep) -> UserView:
-    if id not in user.ownedProjects:
+    if not user.isAdmin(id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User does not have access to project",
         )
 
-    if not db.projects.find_one({"_id": ObjectId(id)}):
+    if not findProjectById(db, id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
 
     if not (
-        updatedUser := db.users.find_one_and_update(
-            {"_id": ObjectId(userID)},
+        updatedUser := findUserAndUpdateById(
+            db,
+            userID,
             {"$pull": {"joinedProjects": id}},
-            return_document=ReturnDocument.AFTER,
         )
     ):
         raise HTTPException(
@@ -210,13 +209,13 @@ def removeProjectUser(id: str, userID: str, user: UserDep, db: DBDep) -> UserVie
 
 @router.get("/{id}/users", name="Get Project Users")
 def getProjectUsers(id: str, db: DBDep, user: UserDep) -> list[UserView]:
-    if id not in user.ownedProjects:
+    if not user.isAdmin(id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User does not have access to project",
         )
 
-    if not db.projects.find_one({"_id": ObjectId(id)}):
+    if not findProjectById(db, id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
