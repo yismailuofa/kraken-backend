@@ -103,9 +103,60 @@ class TestTasks(unittest.TestCase):
 
         task = taskResponse.json()
 
-        print(task)
+        self.assertEqual(task["projectId"], project["id"])
+        self.assertEqual(task["milestoneId"], milestone["id"])
+        self.assertEqual(task["name"], taskName)
+        self.assertEqual(task["description"], taskDescription)
+        self.assertEqual(task["dueDate"], taskDueDate)
+        self.assertEqual(task["qaTask"]["name"], qaTaskName)
+        self.assertEqual(task["qaTask"]["description"], qaTaskDescription)
+        self.assertEqual(task["qaTask"]["dueDate"], qaTaskDueDate)
+
+        for v in task.values():
+            self.assertIsNotNone(v)
+
+    def testGetTask(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test").json()
+        milestone = self.createMilestone(
+            user, project["id"], "test", "test", "2022-01-01T00:00:00"
+        ).json()
+
+        taskName = "test"
+        taskDescription = "test"
+        taskDueDate = "2022-01-01T00:00:00"
+        qaTaskName = "qatest"
+        qaTaskDescription = "qatest"
+        qaTaskDueDate = "2022-01-01T00:00:00"
+
+        createTaskResponse = self.createTask(
+            user,
+            project["id"],
+            milestone["id"],
+            taskName,
+            taskDescription,
+            taskDueDate,
+            {
+                "name": qaTaskName,
+                "description": qaTaskDescription,
+                "dueDate": qaTaskDueDate,
+            },
+        )
+
+        self.assertEqual(createTaskResponse.status_code, 200)
+
+        task = createTaskResponse.json()
+
+        getTaskResponse = self.client.get(
+            f"/tasks/{task['id']}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(getTaskResponse.status_code, 200)
+
+        task = getTaskResponse.json()
 
         self.assertEqual(task["projectId"], project["id"])
+        self.assertEqual(task["milestoneId"], milestone["id"])
         self.assertEqual(task["name"], taskName)
         self.assertEqual(task["description"], taskDescription)
         self.assertEqual(task["dueDate"], taskDueDate)

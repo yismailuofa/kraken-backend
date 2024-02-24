@@ -1,6 +1,12 @@
 from fastapi import APIRouter, HTTPException, status
 
-from api.database import DBDep, findMilestoneById, findProjectById, insertTask
+from api.database import (
+    DBDep,
+    findMilestoneById,
+    findProjectById,
+    findTaskById,
+    insertTask,
+)
 from api.routers.users import UserDep
 from api.schemas import CreateableTask, Task
 
@@ -37,3 +43,20 @@ def createTask(createableTask: CreateableTask, db: DBDep, user: UserDep) -> Task
     task.id = str(result.inserted_id)
 
     return task
+
+
+@router.get("/{id}", name="Get Task")
+def getTask(id: str, db: DBDep, user: UserDep) -> Task:
+    if not (task := findTaskById(db, id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found",
+        )
+
+    if not user.canAccess(task["projectId"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
+        )
+
+    return Task(**task)
