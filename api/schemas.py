@@ -114,21 +114,19 @@ class BaseCreateableTask(BaseModel):
     dueDate: datetime.datetime
     priority: Priority = Priority.medium
     status: Status = Status.todo
+    assignedTo: str = "Unassigned"
 
 
 class CreateableTask(BaseCreateableTask):
     projectId: str
+    milestoneId: str
     qaTask: BaseCreateableTask
 
 
-class BaseTask(BaseCreateableTask):
-    createdAt: datetime.datetime = now()
-    assignedTo: Optional[str] = None
-
-
-class Task(BaseTask, CreateableTask):
+class Task(CreateableTask):
     id: MongoID = None
-    qaTask: BaseTask
+    qaTask: BaseCreateableTask
+    createdAt: datetime.datetime = now()
     dependentMilestones: list[str] = []
     dependentTasks: list[str] = []
 

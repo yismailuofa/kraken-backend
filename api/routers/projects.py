@@ -22,7 +22,6 @@ def createProject(
     db: DBDep,
     user: UserDep,
 ) -> Project:
-
     project = Project(**createableProject.model_dump())
     if not (result := insertProject(db, project)).acknowledged:
         raise HTTPException(

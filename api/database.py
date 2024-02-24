@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from pymongo import MongoClient, ReturnDocument
 from pymongo.database import Database
 
-from api.schemas import Milestone, Project, User
+from api.schemas import Milestone, Project, Task, User
 
 client = MongoClient(os.environ.get("MONGO_URL", "localhost"), 27017)
 
@@ -95,3 +95,12 @@ def findMilestoneAndUpdate(db: Database, milestoneID: str, update: dict):
         update,
         return_document=ReturnDocument.AFTER,
     )
+
+
+# TASK
+def findTaskById(db: Database, id: str):
+    return db.tasks.find_one({"_id": toObjectId(id)})
+
+
+def insertTask(db: Database, task: Task):
+    return db.tasks.insert_one(task.model_dump(exclude={"id"}))
