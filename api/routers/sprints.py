@@ -112,4 +112,4 @@ def deleteSprint(id: str, db: DBDep, user: UserDep):
             detail="Failed to delete sprint",
         )
 
-    return {"message": "Sprint deleted"}
+    return {"message": "Sprint deleted successfully"}

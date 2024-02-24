@@ -114,6 +114,10 @@ def findTaskAndUpdate(db: Database, taskID: str, update: dict):
     )
 
 
+def removeTask(db: Database, taskID: str):
+    return db.tasks.delete_one({"_id": toObjectId(taskID)})
+
+
 # SPRINT
 def findSprintById(db: Database, id: str):
     return db.sprints.find_one({"_id": toObjectId(id)})

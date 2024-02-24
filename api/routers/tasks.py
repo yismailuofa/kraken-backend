@@ -7,6 +7,7 @@ from api.database import (
     findTaskAndUpdate,
     findTaskById,
     insertTask,
+    removeTask,
 )
 from api.routers.users import UserDep
 from api.schemas import CreateableTask, Task, UpdateableTask
@@ -106,3 +107,26 @@ def updateTask(
         )
 
     return Task(**result)
+
+
+@router.delete("/{id}", name="Delete Task")
+def deleteTask(id: str, db: DBDep, user: UserDep):
+    if not (task := findTaskById(db, id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found",
+        )
+
+    if not user.canAccess(task["projectId"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
+        )
+
+    if not removeTask(db, id).deleted_count:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete task",
+        )
+
+    return {"message": "Task deleted successfully"}
