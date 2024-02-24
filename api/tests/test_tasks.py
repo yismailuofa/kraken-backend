@@ -210,3 +210,45 @@ class TestTasks(unittest.TestCase):
 
         for v in task.values():
             self.assertIsNotNone(v)
+
+    def testUpdateTaskProjectAndMilestone(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test").json()
+
+        milestone = self.createMilestone(
+            user, project["id"], "test", "test", "2022-01-01T00:00:00"
+        ).json()
+
+        task = self.createTask(
+            user,
+            project["id"],
+            milestone["id"],
+            **self.testTask,
+        )
+
+        self.assertEqual(task.status_code, 200)
+
+        task = task.json()
+
+        newProject = self.createProject(user, "test", "test").json()
+        newMilestone = self.createMilestone(
+            user, newProject["id"], "test", "test", "2022-01-01T00:00:00"
+        ).json()
+
+        updateTask = {
+            "projectId": newProject["id"],
+            "milestoneId": newMilestone["id"],
+        }
+
+        updateTaskResponse = self.client.patch(
+            f"/tasks/{task['id']}",
+            json=updateTask,
+            headers=self.userToHeader(user),
+        )
+
+        self.assertEqual(updateTaskResponse.status_code, 200)
+
+        task = updateTaskResponse.json()
+
+        self.assertEqual(task["projectId"], newProject["id"])
+        self.assertEqual(task["milestoneId"], newMilestone["id"])

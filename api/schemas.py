@@ -133,6 +133,8 @@ class BaseUpdateableTask(BaseModel):
 
 
 class UpdateableTask(BaseUpdateableTask):
+    projectId: str
+    milestoneId: str
     qaTask: Optional[BaseUpdateableTask] = None
     dependentMilestones: Optional[list[str]] = None
     dependentTasks: Optional[list[str]] = None
