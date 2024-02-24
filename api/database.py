@@ -129,3 +129,7 @@ def findSprintAndUpdate(db: Database, sprintID: str, update: dict):
         update,
         return_document=ReturnDocument.AFTER,
     )
+
+
+def removeSprint(db: Database, sprintID: str):
+    return db.sprints.delete_one({"_id": toObjectId(sprintID)})
