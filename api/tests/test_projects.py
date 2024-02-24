@@ -1,45 +1,12 @@
 import datetime
-import unittest
 
 from fastapi import status
-from fastapi.testclient import TestClient
-from mongomock import MongoClient
 
-from api.database import getDb
-from api.main import app
 from api.schemas import UserView
+from api.tests.util import TestBase
 
 
-class TestProjects(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.client = TestClient(app)
-        cls.mockDb = MongoClient().db
-        app.dependency_overrides[getDb] = lambda: cls.mockDb
-
-    def createUser(self, keyword: str):
-        return self.client.post(
-            "/users/register",
-            json={
-                "username": keyword,
-                "password": keyword,
-                "email": f"{keyword}@{keyword}.com",
-            },
-        ).json()
-
-    def userToHeader(self, user):
-        return {"Authorization": f"Bearer {user['token']}"}
-
-    def createProject(self, user, name, description):
-        return self.client.post(
-            "/projects/",
-            json={
-                "name": name,
-                "description": description,
-            },
-            headers=self.userToHeader(user),
-        )
-
+class TestProjects(TestBase):
     def tearDown(self) -> None:
         self.mockDb.users.delete_many({})
         self.mockDb.projects.delete_many({})

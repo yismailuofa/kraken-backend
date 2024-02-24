@@ -1,18 +1,10 @@
-import unittest
-
-from fastapi.testclient import TestClient
-from mongomock import MongoClient
-
-from api.database import getDb
-from api.main import app
+from api.tests.util import TestBase
 
 
-class TestTasks(unittest.TestCase):
+class TestTasks(TestBase):
     @classmethod
     def setUpClass(cls):
-        cls.client = TestClient(app)
-        cls.mockDb = MongoClient().db
-        app.dependency_overrides[getDb] = lambda: cls.mockDb
+        super().setUpClass()
 
         cls.testTask = {
             "name": "test",
@@ -24,57 +16,6 @@ class TestTasks(unittest.TestCase):
                 "dueDate": "2022-01-01T00:00:00",
             },
         }
-
-    def createUser(self, keyword: str):
-        return self.client.post(
-            "/users/register",
-            json={
-                "username": keyword,
-                "password": keyword,
-                "email": f"{keyword}@{keyword}.com",
-            },
-        ).json()
-
-    def userToHeader(self, user):
-        return {"Authorization": f"Bearer {user['token']}"}
-
-    def createProject(self, user, name, description):
-        return self.client.post(
-            "/projects/",
-            json={
-                "name": name,
-                "description": description,
-            },
-            headers=self.userToHeader(user),
-        )
-
-    def createMilestone(self, user, projectId, name, description, dueDate):
-        return self.client.post(
-            "/milestones/",
-            json={
-                "projectId": projectId,
-                "name": name,
-                "description": description,
-                "dueDate": dueDate,
-            },
-            headers=self.userToHeader(user),
-        )
-
-    def createTask(
-        self, user, projectId, milestoneId, name, description, dueDate, qaTask
-    ):
-        return self.client.post(
-            "/tasks/",
-            json={
-                "projectId": projectId,
-                "milestoneId": milestoneId,
-                "name": name,
-                "description": description,
-                "dueDate": dueDate,
-                "qaTask": qaTask,
-            },
-            headers=self.userToHeader(user),
-        )
 
     def tearDown(self) -> None:
         self.mockDb.users.delete_many({})

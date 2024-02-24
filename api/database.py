@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from pymongo import MongoClient, ReturnDocument
 from pymongo.database import Database
 
-from api.schemas import Milestone, Project, Task, User
+from api.schemas import Milestone, Project, Sprint, Task, User
 
 client = MongoClient(os.environ.get("MONGO_URL", "localhost"), 27017)
 
@@ -109,6 +109,23 @@ def insertTask(db: Database, task: Task):
 def findTaskAndUpdate(db: Database, taskID: str, update: dict):
     return db.tasks.find_one_and_update(
         {"_id": toObjectId(taskID)},
+        update,
+        return_document=ReturnDocument.AFTER,
+    )
+
+
+# SPRINT
+def findSprintById(db: Database, id: str):
+    return db.sprints.find_one({"_id": toObjectId(id)})
+
+
+def insertSprint(db: Database, sprint: Sprint):
+    return db.sprints.insert_one(sprint.model_dump(exclude={"id"}))
+
+
+def findSprintAndUpdate(db: Database, sprintID: str, update: dict):
+    return db.sprints.find_one_and_update(
+        {"_id": toObjectId(sprintID)},
         update,
         return_document=ReturnDocument.AFTER,
     )

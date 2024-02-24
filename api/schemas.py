@@ -133,8 +133,8 @@ class BaseUpdateableTask(BaseModel):
 
 
 class UpdateableTask(BaseUpdateableTask):
-    projectId: str
-    milestoneId: str
+    projectId: Optional[str] = None
+    milestoneId: Optional[str] = None
     qaTask: Optional[BaseUpdateableTask] = None
     dependentMilestones: Optional[list[str]] = None
     dependentTasks: Optional[list[str]] = None
@@ -149,12 +149,24 @@ class Task(CreateableTask):
 
 
 # SPRINT
-class Sprint(BaseModel):
-    id: str
+class CreateableSprint(BaseModel):
     name: str
     description: str
     startDate: datetime.datetime
     endDate: datetime.datetime
+    projectId: str
+
+
+class UpdateableSprint(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    startDate: Optional[datetime.datetime] = None
+    endDate: Optional[datetime.datetime] = None
+    tasks: Optional[list[str]] = None
+    milestones: Optional[list[str]] = None
+
+
+class Sprint(CreateableSprint):
+    id: MongoID = None
     tasks: list[str] = []
     milestones: list[str] = []
-    project: str

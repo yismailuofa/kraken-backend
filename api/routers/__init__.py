@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from .milestones import router as milestonesRouter
 from .projects import router as projectsRouter
+from .sprints import router as sprintsRouter
 from .tasks import router as tasksRouter
 from .users import router as usersRouter
 
@@ -11,3 +12,4 @@ router.include_router(usersRouter, prefix="/users", tags=["Users"])
 router.include_router(projectsRouter, prefix="/projects", tags=["Projects"])
 router.include_router(milestonesRouter, prefix="/milestones", tags=["Milestones"])
 router.include_router(tasksRouter, prefix="/tasks", tags=["Tasks"])
+router.include_router(sprintsRouter, prefix="/sprints", tags=["Sprints"])

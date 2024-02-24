@@ -1,25 +1,20 @@
 import unittest
 
 from fastapi import status
-from fastapi.testclient import TestClient
-from mongomock import MongoClient
 
-from api.database import getDb
-from api.main import app
 from api.schemas import User
+from api.tests.util import TestBase
 
 
-class TestUsers(unittest.TestCase):
+class TestUsers(TestBase):
     @classmethod
     def setUpClass(cls):
-        cls.client = TestClient(app)
+        super().setUpClass()
         cls.testUser = User(
             username="test",
             password="test",
             email="test@test.com",
         )
-        cls.mockDb = MongoClient().db
-        app.dependency_overrides[getDb] = lambda: cls.mockDb
 
     def tearDown(self) -> None:
         self.mockDb.users.delete_many({})

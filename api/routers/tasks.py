@@ -67,6 +67,19 @@ def getTask(id: str, db: DBDep, user: UserDep) -> Task:
 def updateTask(
     id: str, updateableTask: UpdateableTask, db: DBDep, user: UserDep
 ) -> Task:
+    if updateableTask.projectId and not findProjectById(db, updateableTask.projectId):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    if updateableTask.milestoneId and not findMilestoneById(
+        db, updateableTask.milestoneId
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Milestone not found",
+        )
 
     if not (task := findTaskById(db, id)):
         raise HTTPException(
