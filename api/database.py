@@ -87,3 +87,11 @@ def findMilestoneById(db: Database, id: str):
 
 def insertMilestone(db: Database, milestone: Milestone):
     return db.milestones.insert_one(milestone.model_dump(exclude={"id"}))
+
+
+def findMilestoneAndUpdate(db: Database, milestoneID: str, update: dict):
+    return db.milestones.find_one_and_update(
+        {"_id": toObjectId(milestoneID)},
+        update,
+        return_document=ReturnDocument.AFTER,
+    )

@@ -1,8 +1,14 @@
 from fastapi import APIRouter, HTTPException, status
 
-from api.database import DBDep, findMilestoneById, findProjectById, insertMilestone
+from api.database import (
+    DBDep,
+    findMilestoneAndUpdate,
+    findMilestoneById,
+    findProjectById,
+    insertMilestone,
+)
 from api.routers.users import UserDep
-from api.schemas import CreateableMilestone, Milestone
+from api.schemas import CreateableMilestone, Milestone, UpdateableMilestone
 
 router = APIRouter()
 
@@ -50,3 +56,32 @@ def getMilestone(id: str, db: DBDep, user: UserDep) -> Milestone:
         )
 
     return Milestone(**milestone)
+
+
+@router.patch("/{id}", name="Update Milestone")
+def updateMilestone(
+    id: str, updateableMilestone: UpdateableMilestone, db: DBDep, user: UserDep
+) -> Milestone:
+    if not (milestone := findMilestoneById(db, id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Milestone not found",
+        )
+
+    if not user.canAccess(milestone["projectId"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
+        )
+
+    if not (
+        result := findMilestoneAndUpdate(
+            db, id, {"$set": updateableMilestone.model_dump(exclude_none=True)}
+        )
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update milestone",
+        )
+
+    return Milestone(**result)

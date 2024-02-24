@@ -83,9 +83,6 @@ class Project(CreateableProject):
     id: MongoID = None
     createdAt: datetime.datetime = now()
 
-    def oid(self) -> ObjectId:
-        return ObjectId(self.id)
-
 
 # MILESTONE
 class CreateableMilestone(BaseModel):
@@ -93,6 +90,13 @@ class CreateableMilestone(BaseModel):
     description: str
     dueDate: datetime.datetime
     projectId: str
+
+
+class UpdateableMilestone(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    dueDate: Optional[datetime.datetime] = None
+    status: Optional[Status] = None
 
 
 class Milestone(CreateableMilestone):
