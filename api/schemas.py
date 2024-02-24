@@ -108,22 +108,29 @@ class Milestone(CreateableMilestone):
 
 
 # TASK
-class BaseTask(BaseModel):
+class BaseCreateableTask(BaseModel):
     name: str
     description: str
-    createdAt: datetime.datetime
     dueDate: datetime.datetime
-    status: Status
+    priority: Priority = Priority.medium
+    status: Status = Status.todo
+
+
+class CreateableTask(BaseCreateableTask):
     projectId: str
-    priority: Priority
+    qaTask: BaseCreateableTask
+
+
+class BaseTask(BaseCreateableTask):
+    createdAt: datetime.datetime = now()
     assignedTo: Optional[str] = None
+
+
+class Task(BaseTask, CreateableTask):
+    id: MongoID = None
+    qaTask: BaseTask
     dependentMilestones: list[str] = []
     dependentTasks: list[str] = []
-
-
-class Task(BaseTask):
-    id: str
-    qaTask: BaseTask
 
 
 # SPRINT
