@@ -123,6 +123,21 @@ class CreateableTask(BaseCreateableTask):
     qaTask: BaseCreateableTask
 
 
+class BaseUpdateableTask(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    dueDate: Optional[datetime.datetime] = None
+    priority: Optional[Priority] = None
+    status: Optional[Status] = None
+    assignedTo: Optional[str] = None
+
+
+class UpdateableTask(BaseUpdateableTask):
+    qaTask: Optional[BaseUpdateableTask] = None
+    dependentMilestones: Optional[list[str]] = None
+    dependentTasks: Optional[list[str]] = None
+
+
 class Task(CreateableTask):
     id: MongoID = None
     qaTask: BaseCreateableTask

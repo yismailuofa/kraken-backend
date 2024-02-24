@@ -4,11 +4,12 @@ from api.database import (
     DBDep,
     findMilestoneById,
     findProjectById,
+    findTaskAndUpdate,
     findTaskById,
     insertTask,
 )
 from api.routers.users import UserDep
-from api.schemas import CreateableTask, Task
+from api.schemas import CreateableTask, Task, UpdateableTask
 
 router = APIRouter()
 
@@ -60,3 +61,35 @@ def getTask(id: str, db: DBDep, user: UserDep) -> Task:
         )
 
     return Task(**task)
+
+
+@router.patch("/{id}", name="Update Task")
+def updateTask(
+    id: str, updateableTask: UpdateableTask, db: DBDep, user: UserDep
+) -> Task:
+
+    if not (task := findTaskById(db, id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found",
+        )
+
+    if not user.canAccess(task["projectId"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
+        )
+
+    setFields = {**updateableTask.model_dump(exclude_none=True)}
+
+    if qaTask := setFields.pop("qaTask", None):
+        for k, v in qaTask.items():
+            setFields[f"qaTask.{k}"] = v
+
+    if not (result := findTaskAndUpdate(db, id, {"$set": setFields})):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update task",
+        )
+
+    return Task(**result)

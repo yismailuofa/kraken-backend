@@ -14,6 +14,17 @@ class TestTasks(unittest.TestCase):
         cls.mockDb = MongoClient().db
         app.dependency_overrides[getDb] = lambda: cls.mockDb
 
+        cls.testTask = {
+            "name": "test",
+            "description": "test",
+            "dueDate": "2022-01-01T00:00:00",
+            "qaTask": {
+                "name": "qatest",
+                "description": "qatest",
+                "dueDate": "2022-01-01T00:00:00",
+            },
+        }
+
     def createUser(self, keyword: str):
         return self.client.post(
             "/users/register",
@@ -78,25 +89,11 @@ class TestTasks(unittest.TestCase):
             user, project["id"], "test", "test", "2022-01-01T00:00:00"
         ).json()
 
-        taskName = "test"
-        taskDescription = "test"
-        taskDueDate = "2022-01-01T00:00:00"
-        qaTaskName = "qatest"
-        qaTaskDescription = "qatest"
-        qaTaskDueDate = "2022-01-01T00:00:00"
-
         taskResponse = self.createTask(
             user,
             project["id"],
             milestone["id"],
-            taskName,
-            taskDescription,
-            taskDueDate,
-            {
-                "name": qaTaskName,
-                "description": qaTaskDescription,
-                "dueDate": qaTaskDueDate,
-            },
+            **self.testTask,
         )
 
         self.assertEqual(taskResponse.status_code, 200)
@@ -105,12 +102,14 @@ class TestTasks(unittest.TestCase):
 
         self.assertEqual(task["projectId"], project["id"])
         self.assertEqual(task["milestoneId"], milestone["id"])
-        self.assertEqual(task["name"], taskName)
-        self.assertEqual(task["description"], taskDescription)
-        self.assertEqual(task["dueDate"], taskDueDate)
-        self.assertEqual(task["qaTask"]["name"], qaTaskName)
-        self.assertEqual(task["qaTask"]["description"], qaTaskDescription)
-        self.assertEqual(task["qaTask"]["dueDate"], qaTaskDueDate)
+        self.assertEqual(task["name"], self.testTask["name"])
+        self.assertEqual(task["description"], self.testTask["description"])
+        self.assertEqual(task["dueDate"], self.testTask["dueDate"])
+        self.assertEqual(task["qaTask"]["name"], self.testTask["qaTask"]["name"])
+        self.assertEqual(
+            task["qaTask"]["description"], self.testTask["qaTask"]["description"]
+        )
+        self.assertEqual(task["qaTask"]["dueDate"], self.testTask["qaTask"]["dueDate"])
 
         for v in task.values():
             self.assertIsNotNone(v)
@@ -122,25 +121,11 @@ class TestTasks(unittest.TestCase):
             user, project["id"], "test", "test", "2022-01-01T00:00:00"
         ).json()
 
-        taskName = "test"
-        taskDescription = "test"
-        taskDueDate = "2022-01-01T00:00:00"
-        qaTaskName = "qatest"
-        qaTaskDescription = "qatest"
-        qaTaskDueDate = "2022-01-01T00:00:00"
-
         createTaskResponse = self.createTask(
             user,
             project["id"],
             milestone["id"],
-            taskName,
-            taskDescription,
-            taskDueDate,
-            {
-                "name": qaTaskName,
-                "description": qaTaskDescription,
-                "dueDate": qaTaskDueDate,
-            },
+            **self.testTask,
         )
 
         self.assertEqual(createTaskResponse.status_code, 200)
@@ -157,12 +142,71 @@ class TestTasks(unittest.TestCase):
 
         self.assertEqual(task["projectId"], project["id"])
         self.assertEqual(task["milestoneId"], milestone["id"])
-        self.assertEqual(task["name"], taskName)
-        self.assertEqual(task["description"], taskDescription)
-        self.assertEqual(task["dueDate"], taskDueDate)
-        self.assertEqual(task["qaTask"]["name"], qaTaskName)
-        self.assertEqual(task["qaTask"]["description"], qaTaskDescription)
-        self.assertEqual(task["qaTask"]["dueDate"], qaTaskDueDate)
+        self.assertEqual(task["name"], self.testTask["name"])
+        self.assertEqual(task["description"], self.testTask["description"])
+        self.assertEqual(task["dueDate"], self.testTask["dueDate"])
+        self.assertEqual(task["qaTask"]["name"], self.testTask["qaTask"]["name"])
+        self.assertEqual(
+            task["qaTask"]["description"], self.testTask["qaTask"]["description"]
+        )
+        self.assertEqual(task["qaTask"]["dueDate"], self.testTask["qaTask"]["dueDate"])
+
+        for v in task.values():
+            self.assertIsNotNone(v)
+
+    def testUpdateTask(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test").json()
+        milestone = self.createMilestone(
+            user, project["id"], "test", "test", "2022-01-01T00:00:00"
+        ).json()
+
+        task = self.createTask(
+            user,
+            project["id"],
+            milestone["id"],
+            **self.testTask,
+        )
+
+        self.assertEqual(task.status_code, 200)
+
+        task = task.json()
+
+        updateTask = {
+            "name": "updated",
+            "description": "updated",
+            "dueDate": "2022-01-01T00:00:00",
+            "priority": "High",
+            "qaTask": {
+                "name": "updated",
+                "description": "updated",
+                "dueDate": "2022-01-01T00:00:00",
+                "status": "In Progress",
+            },
+        }
+
+        updateTaskResponse = self.client.patch(
+            f"/tasks/{task['id']}",
+            json=updateTask,
+            headers=self.userToHeader(user),
+        )
+
+        self.assertEqual(updateTaskResponse.status_code, 200)
+
+        task = updateTaskResponse.json()
+
+        self.assertEqual(task["projectId"], project["id"])
+        self.assertEqual(task["milestoneId"], milestone["id"])
+        self.assertEqual(task["name"], updateTask["name"])
+        self.assertEqual(task["description"], updateTask["description"])
+        self.assertEqual(task["dueDate"], updateTask["dueDate"])
+        self.assertEqual(task["priority"], updateTask["priority"])
+        self.assertEqual(task["qaTask"]["name"], updateTask["qaTask"]["name"])
+        self.assertEqual(
+            task["qaTask"]["description"], updateTask["qaTask"]["description"]
+        )
+        self.assertEqual(task["qaTask"]["dueDate"], updateTask["qaTask"]["dueDate"])
+        self.assertEqual(task["qaTask"]["status"], updateTask["qaTask"]["status"])
 
         for v in task.values():
             self.assertIsNotNone(v)

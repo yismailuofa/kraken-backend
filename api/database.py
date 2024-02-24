@@ -104,3 +104,11 @@ def findTaskById(db: Database, id: str):
 
 def insertTask(db: Database, task: Task):
     return db.tasks.insert_one(task.model_dump(exclude={"id"}))
+
+
+def findTaskAndUpdate(db: Database, taskID: str, update: dict):
+    return db.tasks.find_one_and_update(
+        {"_id": toObjectId(taskID)},
+        update,
+        return_document=ReturnDocument.AFTER,
+    )
