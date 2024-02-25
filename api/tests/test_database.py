@@ -15,5 +15,5 @@ class TestDatabase(unittest.TestCase):
         self.assertIsNotNone(oid)
 
     def testToObjectIdBad(self):
-        with self.assertRaises(HTTPException) as context:
+        with self.assertRaises(HTTPException):
             toObjectId("123")
