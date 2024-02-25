@@ -68,7 +68,6 @@ class User(CreatableUser):
         return self.ownedProjects + self.joinedProjects
 
 
-# PROJECT
 class CreateableProject(BaseModel):
     name: str
     description: str
@@ -84,7 +83,6 @@ class Project(CreateableProject):
     createdAt: datetime.datetime = now()
 
 
-# MILESTONE
 class CreateableMilestone(BaseModel):
     name: str
     description: str
@@ -109,7 +107,6 @@ class Milestone(CreateableMilestone):
     tasks: list[str] = []
 
 
-# TASK
 class BaseCreateableTask(BaseModel):
     name: str
     description: str
@@ -150,7 +147,6 @@ class Task(CreateableTask):
     createdAt: datetime.datetime = now()
 
 
-# SPRINT
 class CreateableSprint(BaseModel):
     name: str
     description: str
@@ -172,3 +168,9 @@ class Sprint(CreateableSprint):
     id: MongoID = None
     tasks: list[str] = []
     milestones: list[str] = []
+
+
+class ProjectView(Project):
+    milestones: list[Milestone] = []
+    tasks: list[Task] = []
+    sprints: list[Sprint] = []

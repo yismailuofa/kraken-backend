@@ -85,6 +85,10 @@ def findMilestoneById(db: Database, id: str):
     return db.milestones.find_one({"_id": toObjectId(id)})
 
 
+def findMilestones(db: Database, filter: dict):
+    return db.milestones.find(filter)
+
+
 def insertMilestone(db: Database, milestone: Milestone):
     return db.milestones.insert_one(milestone.model_dump(exclude={"id"}))
 
@@ -137,6 +141,10 @@ def removeTask(db: Database, taskID: str):
 # SPRINT
 def findSprintById(db: Database, id: str):
     return db.sprints.find_one({"_id": toObjectId(id)})
+
+
+def findSprints(db: Database, filter: dict):
+    return db.sprints.find(filter)
 
 
 def insertSprint(db: Database, sprint: Sprint):

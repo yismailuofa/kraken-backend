@@ -2,8 +2,11 @@ from fastapi import APIRouter, HTTPException, status
 
 from api.database import (
     DBDep,
+    findMilestones,
     findProjectAndUpdate,
     findProjectById,
+    findSprints,
+    findTasks,
     findUserAndUpdate,
     findUserAndUpdateByEmail,
     findUserAndUpdateById,
@@ -11,7 +14,17 @@ from api.database import (
     toObjectId,
 )
 from api.routers.users import UserDep
-from api.schemas import CreateableProject, Project, UpdateableProject, User, UserView
+from api.schemas import (
+    CreateableProject,
+    Milestone,
+    Project,
+    ProjectView,
+    Sprint,
+    Task,
+    UpdateableProject,
+    User,
+    UserView,
+)
 
 router = APIRouter()
 
@@ -55,7 +68,7 @@ def getProjects(db: DBDep, user: UserDep) -> list[Project]:
 
 
 @router.get("/{id}", name="Get Project")
-def getProject(id: str, db: DBDep, user: UserDep) -> Project:
+def getProject(id: str, db: DBDep, user: UserDep) -> ProjectView:
     if not user.canAccess(id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -68,7 +81,16 @@ def getProject(id: str, db: DBDep, user: UserDep) -> Project:
             detail="Project not found",
         )
 
-    return Project(**project)
+    project = ProjectView(**project)
+    project.milestones = [
+        Milestone(**milestone) for milestone in findMilestones(db, {"projectId": id})
+    ]
+    project.tasks = [Task(**task) for task in findTasks(db, {"projectId": id})]
+    project.sprints = [
+        Sprint(**sprint) for sprint in findSprints(db, {"projectId": id})
+    ]
+
+    return project
 
 
 @router.patch("/{id}", name="Update Project")

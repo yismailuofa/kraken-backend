@@ -57,18 +57,58 @@ class TestProjects(TestBase):
     def testGetProject(self):
         user = self.createUser("test")
 
-        createResponse = self.createProject(user, "test", "test")
+        projectName = projectDescription = "test"
+
+        createResponse = self.createProject(user, projectName, projectDescription)
 
         self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
 
         projectId = createResponse.json()["id"]
+
+        milestone = self.createMilestone(
+            user, projectId, "test", "test", "2022-01-01T00:00:00"
+        ).json()
+        task = self.createTask(
+            user,
+            projectId,
+            milestone["id"],
+            "test",
+            "test",
+            "2022-01-01T00:00:00",
+            {
+                "name": "qatest",
+                "description": "qatest",
+                "dueDate": "2022-01-01T00:00:00",
+            },
+        ).json()
+
+        sprint = self.createSprint(
+            user,
+            projectId,
+            "test",
+            "test",
+            "2022-01-01T00:00:00",
+            "2022-01-01T00:00:00",
+        ).json()
 
         getResponse = self.client.get(
             f"/projects/{projectId}", headers=self.userToHeader(user)
         )
 
         self.assertEqual(getResponse.status_code, status.HTTP_200_OK)
-        self.assertDictEqual(createResponse.json(), getResponse.json())
+
+        self.assertEqual(getResponse.json()["id"], projectId)
+        self.assertEqual(getResponse.json()["name"], projectName)
+        self.assertEqual(getResponse.json()["description"], projectDescription)
+
+        self.assertEqual(len(getResponse.json()["milestones"]), 1)
+        self.assertDictEqual(getResponse.json()["milestones"][0], milestone)
+
+        self.assertEqual(len(getResponse.json()["tasks"]), 1)
+        self.assertDictEqual(getResponse.json()["tasks"][0], task)
+
+        self.assertEqual(len(getResponse.json()["sprints"]), 1)
+        self.assertDictEqual(getResponse.json()["sprints"][0], sprint)
 
     def testGetProjectForbidden(self):
         user = self.createUser("test")

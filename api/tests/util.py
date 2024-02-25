@@ -65,3 +65,16 @@ class TestBase(unittest.TestCase):
             },
             headers=self.userToHeader(user),
         )
+
+    def createSprint(self, user, projectId, name, description, startDate, endDate):
+        return self.client.post(
+            f"/sprints/",
+            headers=self.userToHeader(user),
+            json={
+                "name": name,
+                "projectId": projectId,
+                "description": description,
+                "startDate": startDate,
+                "endDate": endDate,
+            },
+        )

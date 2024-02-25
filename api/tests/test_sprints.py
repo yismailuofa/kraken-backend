@@ -20,27 +20,6 @@ class TestSprints(TestBase):
         self.mockDb.projects.delete_many({})
         self.mockDb.sprints.delete_many({})
 
-    def createSprint(
-        self,
-        user,
-        projectId,
-        name,
-        description,
-        startDate,
-        endDate,
-    ):
-        return self.client.post(
-            f"/sprints/",
-            headers=self.userToHeader(user),
-            json={
-                "name": name,
-                "projectId": projectId,
-                "description": description,
-                "startDate": startDate,
-                "endDate": endDate,
-            },
-        )
-
     def testCreateSprint(self):
         user = self.createUser("test")
         project = self.createProject(user, "test", "test").json()
