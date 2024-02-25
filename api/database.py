@@ -26,8 +26,7 @@ def toObjectId(id: str) -> ObjectId:
 
     return ObjectId(id)
 
-
-# Some helper functions that help offload id logic from the routers
+    # Some helper functions that help offload id logic from the routers
 
 
 # USER
@@ -37,6 +36,10 @@ def findUserById(db: Database, id: str):
 
 def insertUser(db: Database, user: User):
     return db.users.insert_one(user.model_dump(exclude={"id"}))
+
+
+def updateManyUsers(db: Database, filter: dict, update: dict):
+    return db.users.update_many(filter, update)
 
 
 def findUserAndUpdate(db: Database, user: User, update: dict):
@@ -70,6 +73,10 @@ def findProjectById(db: Database, id: str):
 
 def insertProject(db: Database, project: Project):
     return db.projects.insert_one(project.model_dump(exclude={"id"}))
+
+
+def removeProject(db: Database, projectID: str):
+    return db.projects.delete_one({"_id": toObjectId(projectID)})
 
 
 def findProjectAndUpdate(db: Database, projectID: str, update: dict):
@@ -109,6 +116,10 @@ def updateManyMilestones(db: Database, filter: dict, update: dict):
     return db.milestones.update_many(filter, update)
 
 
+def removeMilestones(db: Database, filter: dict):
+    return db.milestones.delete_many(filter)
+
+
 # TASK
 def findTaskById(db: Database, id: str):
     return db.tasks.find_one({"_id": toObjectId(id)})
@@ -138,6 +149,10 @@ def removeTask(db: Database, taskID: str):
     return db.tasks.delete_one({"_id": toObjectId(taskID)})
 
 
+def removeTasks(db: Database, filter: dict):
+    return db.tasks.delete_many(filter)
+
+
 # SPRINT
 def findSprintById(db: Database, id: str):
     return db.sprints.find_one({"_id": toObjectId(id)})
@@ -161,3 +176,7 @@ def findSprintAndUpdate(db: Database, sprintID: str, update: dict):
 
 def removeSprint(db: Database, sprintID: str):
     return db.sprints.delete_one({"_id": toObjectId(sprintID)})
+
+
+def removeSprints(db: Database, filter: dict):
+    return db.sprints.delete_many(filter)

@@ -126,6 +126,72 @@ class TestProjects(TestBase):
 
         self.assertEqual(getResponse.status_code, status.HTTP_403_FORBIDDEN)
 
+    def testDeleteProject(self):
+        user = self.createUser("test")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        self.assertEqual(createResponse.status_code, status.HTTP_200_OK)
+
+        projectId = createResponse.json()["id"]
+
+        milestone = self.createMilestone(
+            user, projectId, "test", "test", "2022-01-01T00:00:00"
+        ).json()
+
+        task = self.createTask(
+            user,
+            projectId,
+            milestone["id"],
+            "test",
+            "test",
+            "2022-01-01T00:00:00",
+            {
+                "name": "qatest",
+                "description": "qatest",
+                "dueDate": "2022-01-01T00:00:00",
+            },
+        ).json()
+
+        sprint = self.createSprint(
+            user,
+            projectId,
+            "test",
+            "test",
+            "2022-01-01T00:00:00",
+            "2022-01-01T00:00:00",
+        ).json()
+
+        deleteResponse = self.client.delete(
+            f"/projects/{projectId}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(deleteResponse.status_code, status.HTTP_200_OK)
+
+        getResponse = self.client.get(
+            f"/projects/{projectId}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(getResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+        getMilestoneResponse = self.client.get(
+            f"/milestones/{milestone['id']}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(getMilestoneResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+        getTaskResponse = self.client.get(
+            f"/tasks/{task['id']}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(getTaskResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+        getSprintResponse = self.client.get(
+            f"/sprints/{sprint['id']}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(getSprintResponse.status_code, status.HTTP_404_NOT_FOUND)
+
     def testUpdateProject(self):
         user = self.createUser("test")
 

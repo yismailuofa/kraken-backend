@@ -11,7 +11,12 @@ from api.database import (
     findUserAndUpdateByEmail,
     findUserAndUpdateById,
     insertProject,
+    removeMilestones,
+    removeProject,
+    removeSprints,
+    removeTasks,
     toObjectId,
+    updateManyUsers,
 )
 from api.routers.users import UserDep
 from api.schemas import (
@@ -69,16 +74,16 @@ def getProjects(db: DBDep, user: UserDep) -> list[Project]:
 
 @router.get("/{id}", name="Get Project")
 def getProject(id: str, db: DBDep, user: UserDep) -> ProjectView:
-    if not user.canAccess(id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User does not have access to project",
-        )
-
     if not (project := findProjectById(db, id)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
+        )
+
+    if not user.canAccess(id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
         )
 
     project = ProjectView(**project)
@@ -91,6 +96,67 @@ def getProject(id: str, db: DBDep, user: UserDep) -> ProjectView:
     ]
 
     return project
+
+
+@router.delete("/{id}", name="Delete Project")
+def deleteProject(id: str, db: DBDep, user: UserDep) -> Project:
+    if not (project := findProjectById(db, id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    if not user.isAdmin(id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
+        )
+
+    if not removeProject(db, id).acknowledged:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete project",
+        )
+
+    if not removeMilestones(db, {"projectId": id}).acknowledged:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete milestones",
+        )
+
+    if not removeTasks(db, {"projectId": id}).acknowledged:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete tasks",
+        )
+
+    if not removeSprints(db, {"projectId": id}).acknowledged:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete sprints",
+        )
+
+    if not findUserAndUpdate(
+        db,
+        user,
+        {"$pull": {"ownedProjects": id}},
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user",
+        )
+
+    if not updateManyUsers(
+        db,
+        {},
+        {"$pull": {"joinedProjects": id}},
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update users",
+        )
+
+    return Project(**project)
 
 
 @router.patch("/{id}", name="Update Project")
