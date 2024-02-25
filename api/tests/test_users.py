@@ -1,5 +1,3 @@
-import unittest
-
 from fastapi import status
 
 from api.schemas import User
@@ -136,7 +134,3 @@ class TestUsers(TestBase):
             },
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
-if __name__ == "__main__":
-    unittest.main()
