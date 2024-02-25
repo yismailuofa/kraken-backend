@@ -97,9 +97,21 @@ def findMilestoneAndUpdate(db: Database, milestoneID: str, update: dict):
     )
 
 
+def removeMilestone(db: Database, milestoneID: str):
+    return db.milestones.delete_one({"_id": toObjectId(milestoneID)})
+
+
+def updateManyMilestones(db: Database, filter: dict, update: dict):
+    return db.milestones.update_many(filter, update)
+
+
 # TASK
 def findTaskById(db: Database, id: str):
     return db.tasks.find_one({"_id": toObjectId(id)})
+
+
+def findTasks(db: Database, filter: dict):
+    return db.tasks.find(filter)
 
 
 def insertTask(db: Database, task: Task):
@@ -112,6 +124,10 @@ def findTaskAndUpdate(db: Database, taskID: str, update: dict):
         update,
         return_document=ReturnDocument.AFTER,
     )
+
+
+def updateManyTasks(db: Database, filter: dict, update: dict):
+    return db.tasks.update_many(filter, update)
 
 
 def removeTask(db: Database, taskID: str):

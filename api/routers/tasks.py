@@ -8,6 +8,8 @@ from api.database import (
     findTaskById,
     insertTask,
     removeTask,
+    updateManyMilestones,
+    updateManyTasks,
 )
 from api.routers.users import UserDep
 from api.schemas import CreateableTask, Task, UpdateableTask
@@ -127,6 +129,26 @@ def deleteTask(id: str, db: DBDep, user: UserDep):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete task",
+        )
+
+    if not updateManyMilestones(
+        db,
+        {},
+        {"$pull": {"dependentTasks": id}},
+    ).acknowledged:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to remove task from milestone",
+        )
+
+    if not updateManyTasks(
+        db,
+        {},
+        {"$pull": {"dependentTasks": id}},
+    ).acknowledged:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to remove task from dependent tasks",
         )
 
     return {"message": "Task deleted successfully"}

@@ -37,7 +37,7 @@ class TestBase(unittest.TestCase):
             headers=self.userToHeader(user),
         )
 
-    def createMilestone(self, user, projectId, name, description, dueDate):
+    def createMilestone(self, user, projectId, name, description, dueDate, args={}):
         return self.client.post(
             "/milestones/",
             json={
@@ -50,7 +50,7 @@ class TestBase(unittest.TestCase):
         )
 
     def createTask(
-        self, user, projectId, milestoneId, name, description, dueDate, qaTask
+        self, user, projectId, milestoneId, name, description, dueDate, qaTask, args={}
     ):
         return self.client.post(
             "/tasks/",
@@ -61,6 +61,7 @@ class TestBase(unittest.TestCase):
                 "description": description,
                 "dueDate": dueDate,
                 "qaTask": qaTask,
+                **args,
             },
             headers=self.userToHeader(user),
         )

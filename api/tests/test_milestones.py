@@ -5,6 +5,15 @@ from api.tests.util import TestBase
 
 
 class TestMilestones(TestBase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.testMilestone = {
+            "name": "test",
+            "description": "test",
+            "dueDate": "2001-10-01T00:00:00",
+        }
+
     def tearDown(self) -> None:
         self.mockDb.users.delete_many({})
         self.mockDb.projects.delete_many({})
@@ -14,12 +23,8 @@ class TestMilestones(TestBase):
         user = self.createUser("test")
         project = self.createProject(user, "test", "test").json()
 
-        milestoneName = "test"
-        milestoneDescription = "test"
-        milestoneDueDate = "2001-10-01T00:00:00"
-
         milestoneResponse = self.createMilestone(
-            user, project["id"], milestoneName, milestoneDescription, milestoneDueDate
+            user, project["id"], **self.testMilestone
         )
 
         self.assertEqual(milestoneResponse.status_code, status.HTTP_200_OK)
@@ -27,9 +32,9 @@ class TestMilestones(TestBase):
         milestone = milestoneResponse.json()
 
         self.assertEqual(milestone["projectId"], project["id"])
-        self.assertEqual(milestone["name"], milestoneName)
-        self.assertEqual(milestone["description"], milestoneDescription)
-        self.assertEqual(milestone["dueDate"], milestoneDueDate)
+        self.assertEqual(milestone["name"], self.testMilestone["name"])
+        self.assertEqual(milestone["description"], self.testMilestone["description"])
+        self.assertEqual(milestone["dueDate"], self.testMilestone["dueDate"])
 
         for v in milestone.values():
             self.assertIsNotNone(v)
@@ -38,7 +43,7 @@ class TestMilestones(TestBase):
         user = self.createUser("test")
 
         milestoneResponse = self.createMilestone(
-            user, str(ObjectId()), "test", "test", "2001-10-01T00:00:00"
+            user, str(ObjectId()), **self.testMilestone
         )
 
         self.assertEqual(milestoneResponse.status_code, status.HTTP_404_NOT_FOUND)
@@ -51,7 +56,7 @@ class TestMilestones(TestBase):
         otherUser = self.createUser("other")
 
         milestoneResponse = self.createMilestone(
-            otherUser, project["id"], "test", "test", "2001-10-01T00:00:00"
+            otherUser, project["id"], **self.testMilestone
         )
 
         self.assertEqual(milestoneResponse.status_code, status.HTTP_403_FORBIDDEN)
@@ -60,12 +65,8 @@ class TestMilestones(TestBase):
         user = self.createUser("test")
         project = self.createProject(user, "test", "test").json()
 
-        milestoneName = "test"
-        milestoneDescription = "test"
-        milestoneDueDate = "2001-10-01T00:00:00"
-
         createMilestoneResponse = self.createMilestone(
-            user, project["id"], milestoneName, milestoneDescription, milestoneDueDate
+            user, project["id"], **self.testMilestone
         )
 
         self.assertEqual(createMilestoneResponse.status_code, status.HTTP_200_OK)
@@ -80,9 +81,9 @@ class TestMilestones(TestBase):
         milestone = milestoneResponse.json()
 
         self.assertEqual(milestone["projectId"], project["id"])
-        self.assertEqual(milestone["name"], milestoneName)
-        self.assertEqual(milestone["description"], milestoneDescription)
-        self.assertEqual(milestone["dueDate"], milestoneDueDate)
+        self.assertEqual(milestone["name"], self.testMilestone["name"])
+        self.assertEqual(milestone["description"], self.testMilestone["description"])
+        self.assertEqual(milestone["dueDate"], self.testMilestone["dueDate"])
 
         for v in milestone.values():
             self.assertIsNotNone(v)
@@ -104,7 +105,7 @@ class TestMilestones(TestBase):
         otherUser = self.createUser("other")
 
         createMilestoneResponse = self.createMilestone(
-            user, project["id"], "test", "test", "2001-10-01T00:00:00"
+            user, project["id"], **self.testMilestone
         )
 
         milestoneResponse = self.client.get(
@@ -119,7 +120,7 @@ class TestMilestones(TestBase):
         project = self.createProject(user, "test", "test").json()
 
         milestone = self.createMilestone(
-            user, project["id"], "test", "test", "2001-10-01T00:00:00"
+            user, project["id"], **self.testMilestone
         ).json()
 
         milestoneName = "test2"
@@ -156,7 +157,7 @@ class TestMilestones(TestBase):
         project = self.createProject(user, "test", "test").json()
 
         milestone = self.createMilestone(
-            user, project["id"], "test", "test", "2001-10-01T00:00:00"
+            user, project["id"], **self.testMilestone
         ).json()
 
         otherUser = self.createUser("other")
@@ -168,3 +169,41 @@ class TestMilestones(TestBase):
         )
 
         self.assertEqual(updateMilestoneResponse.status_code, status.HTTP_403_FORBIDDEN)
+
+    def testDeleteMilestone(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test").json()
+
+        milestone = self.createMilestone(
+            user, project["id"], **self.testMilestone
+        ).json()
+
+        milestone2 = self.createMilestone(
+            user,
+            project["id"],
+            **self.testMilestone,
+            args={"dependentMilestones": [milestone["id"]]},
+        ).json()
+
+        deleteMilestoneResponse = self.client.delete(
+            f"/milestones/{milestone['id']}",
+            headers=self.userToHeader(user),
+        )
+
+        self.assertEqual(deleteMilestoneResponse.status_code, status.HTTP_200_OK)
+
+        milestoneResponse = self.client.get(
+            f"/milestones/{milestone['id']}",
+            headers=self.userToHeader(user),
+        )
+
+        self.assertEqual(milestoneResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+        milestone2Response = self.client.get(
+            f"/milestones/{milestone2['id']}",
+            headers=self.userToHeader(user),
+        )
+
+        self.assertEqual(milestone2Response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(milestone2Response.json()["dependentMilestones"], [])

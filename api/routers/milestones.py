@@ -5,8 +5,11 @@ from api.database import (
     findMilestoneAndUpdate,
     findMilestoneById,
     findProjectById,
+    findTasks,
     insertMilestone,
+    removeMilestone,
 )
+from api.routers.tasks import deleteTask
 from api.routers.users import UserDep
 from api.schemas import CreateableMilestone, Milestone, UpdateableMilestone
 
@@ -85,3 +88,29 @@ def updateMilestone(
         )
 
     return Milestone(**result)
+
+
+@router.delete("/{id}", name="Delete Milestone")
+def deleteMilestone(id: str, db: DBDep, user: UserDep):
+    if not (milestone := findMilestoneById(db, id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Milestone not found",
+        )
+
+    if not user.canAccess(milestone["projectId"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
+        )
+
+    if not removeMilestone(db, id).deleted_count:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete milestone",
+        )
+
+    for task in findTasks(db, {"milestoneId": id}):
+        deleteTask(str(task["_id"]), db, user)
+
+    return {"message": "Milestone deleted successfully"}

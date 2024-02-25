@@ -207,19 +207,33 @@ class TestTasks(TestBase):
             milestone["id"],
             **self.testTask,
         )
-
+        task2 = self.createTask(
+            user,
+            project["id"],
+            milestone["id"],
+            **self.testTask,
+            args={"dependentTasks": [task.json()["id"]]},
+        )
         self.assertEqual(task.status_code, 200)
+        self.assertEqual(task2.status_code, 200)
 
         task = task.json()
+        task2 = task2.json()
 
         deleteTaskResponse = self.client.delete(
             f"/tasks/{task['id']}", headers=self.userToHeader(user)
         )
-
         self.assertEqual(deleteTaskResponse.status_code, 200)
 
         getTaskResponse = self.client.get(
             f"/tasks/{task['id']}", headers=self.userToHeader(user)
         )
-
         self.assertEqual(getTaskResponse.status_code, 404)
+
+        getTaskResponse = self.client.get(
+            f"/tasks/{task2['id']}", headers=self.userToHeader(user)
+        )
+        self.assertEqual(getTaskResponse.status_code, 200)
+
+        task2 = getTaskResponse.json()
+        self.assertEqual(task2["dependentTasks"], [])

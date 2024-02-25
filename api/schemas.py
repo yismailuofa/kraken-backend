@@ -90,6 +90,8 @@ class CreateableMilestone(BaseModel):
     description: str
     dueDate: datetime.datetime
     projectId: str
+    dependentMilestones: list[str] = []
+    dependentTasks: list[str] = []
 
 
 class UpdateableMilestone(BaseModel):
@@ -97,14 +99,14 @@ class UpdateableMilestone(BaseModel):
     description: Optional[str] = None
     dueDate: Optional[datetime.datetime] = None
     status: Optional[Status] = None
+    dependentMilestones: Optional[list[str]] = None
+    dependentTasks: Optional[list[str]] = None
 
 
 class Milestone(CreateableMilestone):
     id: MongoID = None
     status: Status = Status.todo
     tasks: list[str] = []
-    dependentMilestones: list[str] = []
-    dependentTasks: list[str] = []
 
 
 # TASK
@@ -120,6 +122,8 @@ class BaseCreateableTask(BaseModel):
 class CreateableTask(BaseCreateableTask):
     projectId: str
     milestoneId: str
+    dependentMilestones: list[str] = []
+    dependentTasks: list[str] = []
     qaTask: BaseCreateableTask
 
 
@@ -144,8 +148,6 @@ class Task(CreateableTask):
     id: MongoID = None
     qaTask: BaseCreateableTask
     createdAt: datetime.datetime = now()
-    dependentMilestones: list[str] = []
-    dependentTasks: list[str] = []
 
 
 # SPRINT
