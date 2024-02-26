@@ -99,7 +99,7 @@ def getProject(id: str, db: DBDep, user: UserDep) -> ProjectView:
 
 
 @router.delete("/{id}", name="Delete Project")
-def deleteProject(id: str, db: DBDep, user: UserDep) -> Project:
+def deleteProject(id: str, db: DBDep, user: UserDep):
     if not (project := findProjectById(db, id)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -156,7 +156,9 @@ def deleteProject(id: str, db: DBDep, user: UserDep) -> Project:
             detail="Failed to update users",
         )
 
-    return Project(**project)
+    return {
+        "message": "Project deleted successfully",
+    }
 
 
 @router.patch("/{id}", name="Update Project")

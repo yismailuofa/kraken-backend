@@ -25,10 +25,16 @@ def createTask(createableTask: CreateableTask, db: DBDep, user: UserDep) -> Task
             detail="Project not found",
         )
 
-    if not findMilestoneById(db, createableTask.milestoneId):
+    if not (milestone := findMilestoneById(db, createableTask.milestoneId)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Milestone not found",
+        )
+
+    if milestone["projectId"] != createableTask.projectId:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Milestone does not belong to project",
         )
 
     if not user.canAccess(createableTask.projectId):
