@@ -18,3 +18,9 @@
 1. Navigate to the root directory
 2. Run `python3 -m unittest`
 3. To run a specific file run you can specify it like so `python3 -m unittest api/tests/test_projects.py`
+
+## Generating Coverage
+
+1. Run `coverage run --source=api -m unittest`
+2. Run `coverage report > coverage.txt` to save the coverage report to a file.
+3. Run `coverage html` to generate a html report.
