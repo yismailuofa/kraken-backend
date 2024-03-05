@@ -73,7 +73,6 @@ def getCurrentUser(
         token = credentials.credentials
 
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
-
         if not (user := findUserById(db, payload["sub"])) or user["token"] != token:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
