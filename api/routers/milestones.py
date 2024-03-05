@@ -8,6 +8,8 @@ from api.database import (
     findTasks,
     insertMilestone,
     removeMilestone,
+    updateManyMilestones,
+    updateManyTasks,
 )
 from api.routers.tasks import deleteTask
 from api.routers.users import UserDep
@@ -112,5 +114,25 @@ def deleteMilestone(id: str, db: DBDep, user: UserDep):
 
     for task in findTasks(db, {"milestoneId": id}):
         deleteTask(str(task["_id"]), db, user)
+
+    if not updateManyMilestones(
+        db,
+        {},
+        {"$pull": {"dependentMilestones": id}},
+    ).acknowledged:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to remove task from milestone",
+        )
+
+    if not updateManyTasks(
+        db,
+        {},
+        {"$pull": {"dependentMilestones": id}},
+    ).acknowledged:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to remove task from dependent tasks",
+        )
 
     return {"message": "Milestone deleted successfully"}

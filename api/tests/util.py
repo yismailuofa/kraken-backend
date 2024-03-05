@@ -45,6 +45,7 @@ class TestBase(unittest.TestCase):
                 "name": name,
                 "description": description,
                 "dueDate": dueDate,
+                **args,
             },
             headers=self.userToHeader(user),
         )
