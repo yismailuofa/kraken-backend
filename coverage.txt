@@ -5,7 +5,7 @@ api/database.py                   75      0   100%
 api/main.py                        6      0   100%
 api/routers/__init__.py           12      0   100%
 api/routers/milestones.py         48      0   100%
-api/routers/projects.py           95     22    77%
+api/routers/projects.py           95      0   100%
 api/routers/sprints.py            41      0   100%
 api/routers/tasks.py              57      0   100%
 api/routers/users.py              53      0   100%
@@ -13,10 +13,10 @@ api/schemas.py                   116      0   100%
 api/tests/__init__.py              0      0   100%
 api/tests/test_database.py        13      0   100%
 api/tests/test_milestones.py     166      0   100%
-api/tests/test_projects.py       175      0   100%
+api/tests/test_projects.py       317      0   100%
 api/tests/test_sprints.py        135      0   100%
 api/tests/test_tasks.py          238      0   100%
 api/tests/test_users.py           91      0   100%
 api/tests/util.py                 23      0   100%
 --------------------------------------------------
-TOTAL                           1344     22    98%
+TOTAL                           1486      0   100%

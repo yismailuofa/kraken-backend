@@ -150,7 +150,7 @@ def deleteProject(id: str, db: DBDep, user: UserDep):
         db,
         {},
         {"$pull": {"joinedProjects": id}},
-    ):
+    ).acknowledged:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update users",
@@ -165,16 +165,16 @@ def deleteProject(id: str, db: DBDep, user: UserDep):
 def updateProject(
     id: str, updateableProject: UpdateableProject, db: DBDep, user: UserDep
 ) -> Project:
-    if not user.isAdmin(id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User does not have access to project",
-        )
-
     if not findProjectById(db, id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
+        )
+
+    if not user.isAdmin(id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
         )
 
     if not (
@@ -240,16 +240,16 @@ def leaveProject(id: str, db: DBDep, user: UserDep) -> User:
 
 @router.post("/{id}/users", name="Add User to Project")
 def addProjectUser(id: str, email: str, user: UserDep, db: DBDep) -> UserView:
-    if not user.isAdmin(id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User does not have access to project",
-        )
-
     if not findProjectById(db, id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
+        )
+
+    if not user.isAdmin(id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
         )
 
     if not (
@@ -269,16 +269,16 @@ def addProjectUser(id: str, email: str, user: UserDep, db: DBDep) -> UserView:
 
 @router.delete("/{id}/users", name="Remove User from Project")
 def removeProjectUser(id: str, userID: str, user: UserDep, db: DBDep) -> UserView:
-    if not user.isAdmin(id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User does not have access to project",
-        )
-
     if not findProjectById(db, id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
+        )
+
+    if not user.isAdmin(id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
         )
 
     if not (
@@ -298,16 +298,16 @@ def removeProjectUser(id: str, userID: str, user: UserDep, db: DBDep) -> UserVie
 
 @router.get("/{id}/users", name="Get Project Users")
 def getProjectUsers(id: str, db: DBDep, user: UserDep) -> list[UserView]:
-    if not user.isAdmin(id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User does not have access to project",
-        )
-
     if not findProjectById(db, id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
+        )
+
+    if not user.isAdmin(id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to project",
         )
 
     return [UserView(**user) for user in db.users.find({"joinedProjects": id})]

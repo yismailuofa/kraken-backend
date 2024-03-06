@@ -1,5 +1,7 @@
 import datetime
+from unittest.mock import Mock
 
+from bson import ObjectId
 from fastapi import status
 
 from api.schemas import UserView
@@ -7,9 +9,46 @@ from api.tests.util import TestBase
 
 
 class TestProjects(TestBase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.mockDb.projects.insert_one = Mock(wraps=cls.mockDb.projects.insert_one)
+        cls.mockDb.projects.delete_one = Mock(wraps=cls.mockDb.projects.delete_one)
+        cls.mockDb.projects.find_one_and_update = Mock(
+            wraps=cls.mockDb.projects.find_one_and_update
+        )
+        cls.mockDb.projects.find_one = Mock(wraps=cls.mockDb.projects.find_one)
+        cls.mockDb.milestones.delete_many = Mock(
+            wraps=cls.mockDb.milestones.delete_many
+        )
+        cls.mockDb.tasks.delete_many = Mock(wraps=cls.mockDb.tasks.delete_many)
+        cls.mockDb.sprints.delete_many = Mock(wraps=cls.mockDb.sprints.delete_many)
+
+        cls.mockDb.users.find_one_and_update = Mock(
+            wraps=cls.mockDb.users.find_one_and_update
+        )
+        cls.mockDb.users.update_many = Mock(wraps=cls.mockDb.users.update_many)
+
     def tearDown(self) -> None:
         self.mockDb.users.delete_many({})
         self.mockDb.projects.delete_many({})
+
+        opts = {
+            "return_value": True,
+            "side_effect": True,
+        }
+        self.mockDb.projects.insert_one.reset_mock(**opts)
+        self.mockDb.projects.delete_one.reset_mock(**opts)
+        self.mockDb.projects.find_one_and_update.reset_mock(**opts)
+        self.mockDb.projects.find_one.reset_mock(**opts)
+
+        self.mockDb.milestones.delete_many.reset_mock(**opts)
+        self.mockDb.tasks.delete_many.reset_mock(**opts)
+        self.mockDb.sprints.delete_many.reset_mock(**opts)
+
+        self.mockDb.users.find_one_and_update.reset_mock(**opts)
+        self.mockDb.users.update_many.reset_mock(**opts)
 
     def testCreateProject(self):
         projectName = "test"
@@ -35,6 +74,24 @@ class TestProjects(TestBase):
             difference,
             datetime.timedelta(minutes=1),
         )
+
+    def testCreateProjectFailure(self):
+        user = self.createUser("test")
+
+        self.mockDb.projects.insert_one.return_value.acknowledged = False
+
+        response = self.createProject(user, "", "test")
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def testCreateProjectUserFailure(self):
+        user = self.createUser("test")
+
+        self.mockDb.users.find_one_and_update.return_value = None
+
+        response = self.createProject(user, "test", "test")
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def testGetProjects(self):
         user = self.createUser("test")
@@ -192,6 +249,113 @@ class TestProjects(TestBase):
 
         self.assertEqual(getSprintResponse.status_code, status.HTTP_404_NOT_FOUND)
 
+    def testDeleteProjectNotFound(self):
+        user = self.createUser("test")
+
+        deleteResponse = self.client.delete(
+            f"/projects/{ObjectId()}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(deleteResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+    def testDeleteProjectForbidden(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        projectId = createResponse.json()["id"]
+
+        deleteResponse = self.client.delete(
+            f"/projects/{projectId}", headers=self.userToHeader(user2)
+        )
+
+        self.assertEqual(deleteResponse.status_code, status.HTTP_403_FORBIDDEN)
+
+    def testDeleteProjectFailure(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test")
+
+        self.mockDb.projects.delete_one.return_value.acknowledged = False
+
+        deleteResponse = self.client.delete(
+            f"/projects/{project.json()['id']}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(
+            deleteResponse.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    def testDeleteProjectMillstonesFailure(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test")
+
+        self.mockDb.milestones.delete_many.return_value.acknowledged = False
+
+        deleteResponse = self.client.delete(
+            f"/projects/{project.json()['id']}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(
+            deleteResponse.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    def testDeleteProjectTasksFailure(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test")
+
+        self.mockDb.tasks.delete_many.return_value.acknowledged = False
+
+        deleteResponse = self.client.delete(
+            f"/projects/{project.json()['id']}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(
+            deleteResponse.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    def testDeleteProjectSprintsFailure(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test")
+
+        self.mockDb.sprints.delete_many.return_value.acknowledged = False
+
+        deleteResponse = self.client.delete(
+            f"/projects/{project.json()['id']}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(
+            deleteResponse.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    def testDeleteProjectUserFailure(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test")
+
+        self.mockDb.users.find_one_and_update.return_value = None
+
+        deleteResponse = self.client.delete(
+            f"/projects/{project.json()['id']}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(
+            deleteResponse.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    def testDeleteProjectUserUpdateFailure(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test")
+
+        self.mockDb.users.update_many.return_value.acknowledged = False
+
+        deleteResponse = self.client.delete(
+            f"/projects/{project.json()['id']}", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(
+            deleteResponse.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
     def testUpdateProject(self):
         user = self.createUser("test")
 
@@ -233,6 +397,33 @@ class TestProjects(TestBase):
 
         self.assertEqual(updateResponse.status_code, status.HTTP_403_FORBIDDEN)
 
+    def testUpdateProjectNotFound(self):
+        user = self.createUser("test")
+
+        updateResponse = self.client.patch(
+            f"/projects/{ObjectId()}",
+            headers=self.userToHeader(user),
+            json={"name": "test", "description": "test"},
+        )
+
+        self.assertEqual(updateResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+    def testUpdateProjectFailure(self):
+        user = self.createUser("test")
+        project = self.createProject(user, "test", "test")
+
+        self.mockDb.projects.find_one_and_update.return_value = None
+
+        updateResponse = self.client.patch(
+            f"/projects/{project.json()['id']}",
+            headers=self.userToHeader(user),
+            json={"name": "test", "description": "test"},
+        )
+
+        self.assertEqual(
+            updateResponse.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
     def testJoinProject(self):
         user = self.createUser("test")
         user2 = self.createUser("test2")
@@ -253,6 +444,30 @@ class TestProjects(TestBase):
 
         self.assertEqual(userResponse.status_code, status.HTTP_200_OK)
         self.assertEqual(userResponse.json()["joinedProjects"], [projectId])
+
+    def testJoinProjectNotFound(self):
+        user = self.createUser("test")
+
+        joinResponse = self.client.post(
+            f"/projects/{ObjectId()}/join", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(joinResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+    def testJoinProjectFailure(self):
+        user = self.createUser("test")
+
+        project = self.createProject(user, "test", "test")
+
+        self.mockDb.users.find_one_and_update.return_value = None
+
+        joinResponse = self.client.post(
+            f"/projects/{project.json()['id']}/join", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(
+            joinResponse.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
     def testLeaveProject(self):
         user = self.createUser("test")
@@ -281,6 +496,30 @@ class TestProjects(TestBase):
         self.assertEqual(userResponse.status_code, status.HTTP_200_OK)
         self.assertEqual(userResponse.json()["joinedProjects"], [])
 
+    def testLeaveProjectNotFound(self):
+        user = self.createUser("test")
+
+        leaveResponse = self.client.delete(
+            f"/projects/{ObjectId()}/leave", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(leaveResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+    def testLeaveProjectFailure(self):
+        user = self.createUser("test")
+
+        project = self.createProject(user, "test", "test")
+
+        self.mockDb.users.find_one_and_update.return_value = None
+
+        leaveResponse = self.client.delete(
+            f"/projects/{project.json()['id']}/leave", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(
+            leaveResponse.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
     def testAddProjectUser(self):
         user = self.createUser("test")
         user2 = self.createUser("test2")
@@ -303,6 +542,34 @@ class TestProjects(TestBase):
 
         self.assertEqual(userResponse.status_code, status.HTTP_200_OK)
         self.assertEqual(userResponse.json()["joinedProjects"], [projectId])
+
+    def testAddProjectUserNotFound(self):
+        user = self.createUser("test")
+
+        addUserResponse = self.client.post(
+            f"/projects/{ObjectId()}/users",
+            headers=self.userToHeader(user),
+            params={"email": "test"},
+        )
+
+        self.assertEqual(addUserResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+    def testAddProjectUserFailure(self):
+        user = self.createUser("test")
+
+        project = self.createProject(user, "test", "test")
+
+        self.mockDb.users.find_one_and_update.return_value = None
+
+        addUserResponse = self.client.post(
+            f"/projects/{project.json()['id']}/users",
+            headers=self.userToHeader(user),
+            params={"email": "test"},
+        )
+
+        self.assertEqual(
+            addUserResponse.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
     def testAddProjectUserForbidden(self):
         user = self.createUser("test")
@@ -354,6 +621,34 @@ class TestProjects(TestBase):
         self.assertEqual(userResponse.status_code, status.HTTP_200_OK)
         self.assertEqual(userResponse.json()["joinedProjects"], [])
 
+    def testRemoveProjectUserNotFound(self):
+        user = self.createUser("test")
+
+        removeUserResponse = self.client.delete(
+            f"/projects/{ObjectId()}/users",
+            headers=self.userToHeader(user),
+            params={"userID": "test"},
+        )
+
+        self.assertEqual(removeUserResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+    def testRemoveProjectUserFailure(self):
+        user = self.createUser("test")
+
+        project = self.createProject(user, "test", "test")
+
+        self.mockDb.users.find_one_and_update.return_value = None
+
+        removeUserResponse = self.client.delete(
+            f"/projects/{project.json()['id']}/users",
+            headers=self.userToHeader(user),
+            params={"userID": str(ObjectId())},
+        )
+
+        self.assertEqual(
+            removeUserResponse.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
     def testRemoveProjectUserForbidden(self):
         user = self.createUser("test")
         user2 = self.createUser("test2")
@@ -396,3 +691,26 @@ class TestProjects(TestBase):
 
         self.assertEqual(getResponse.status_code, status.HTTP_200_OK)
         self.assertListEqual(getResponse.json(), [UserView(**user2).model_dump()])
+
+    def testGetProjectUsersNotFound(self):
+        user = self.createUser("test")
+
+        getResponse = self.client.get(
+            f"/projects/{ObjectId()}/users", headers=self.userToHeader(user)
+        )
+
+        self.assertEqual(getResponse.status_code, status.HTTP_404_NOT_FOUND)
+
+    def testGetProjectUsersForbidden(self):
+        user = self.createUser("test")
+        user2 = self.createUser("test2")
+
+        createResponse = self.createProject(user, "test", "test")
+
+        projectId = createResponse.json()["id"]
+
+        getResponse = self.client.get(
+            f"/projects/{projectId}/users", headers=self.userToHeader(user2)
+        )
+
+        self.assertEqual(getResponse.status_code, status.HTTP_403_FORBIDDEN)
