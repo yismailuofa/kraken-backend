@@ -10,7 +10,7 @@
 ## Running the App on Docker
 
 1. Navigate to the root directory
-2. Run `docker compose up -d --build`
+2. Run `docker compose -f docker-compose.dev.yml -d --build up`
 3. Go to http://localhost/docs
 
 ## Running Tests
