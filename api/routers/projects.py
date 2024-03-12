@@ -100,7 +100,7 @@ def getProject(id: str, db: DBDep, user: UserDep) -> ProjectView:
 
 @router.delete("/{id}", name="Delete Project")
 def deleteProject(id: str, db: DBDep, user: UserDep):
-    if not (project := findProjectById(db, id)):
+    if not (findProjectById(db, id)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",

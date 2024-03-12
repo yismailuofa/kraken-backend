@@ -5,9 +5,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 from passlib.hash import bcrypt
-from pymongo import ReturnDocument
 
-from api.database import DBDep, findUserAndUpdate, findUserById, insertUser
+from api.database import (
+    DBDep,
+    findUserAndUpdate,
+    findUserByEmail,
+    findUserById,
+    findUserByUsername,
+    insertUser,
+)
 from api.schemas import CreatableUser, User
 
 router = APIRouter()
@@ -19,9 +25,14 @@ JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "kraken")
     "/register", status_code=status.HTTP_201_CREATED, response_model_by_alias=False
 )
 def register(createableUser: CreatableUser, db: DBDep) -> User:
-    if db.users.find_one({"username": createableUser.username}):
+    if findUserByUsername(db, createableUser.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
+        )
+
+    if findUserByEmail(db, createableUser.email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists"
         )
 
     createableUser.password = hashPassword(createableUser.password)
@@ -34,11 +45,13 @@ def register(createableUser: CreatableUser, db: DBDep) -> User:
             detail="Failed to create user",
         )
 
+    user.id = str(insertedUserResult.inserted_id)
+
     if not (
-        userWithToken := db.users.find_one_and_update(
-            {"_id": insertedUserResult.inserted_id},
-            {"$set": {"token": createToken(str(insertedUserResult.inserted_id))}},
-            return_document=ReturnDocument.AFTER,
+        userWithToken := findUserAndUpdate(
+            db,
+            user,
+            {"$set": {"token": createToken(user.id)}},
         )
     ):
         raise HTTPException(
@@ -51,7 +64,7 @@ def register(createableUser: CreatableUser, db: DBDep) -> User:
 
 @router.post("/login", response_model_by_alias=False)
 def login(username: str, password: str, db: DBDep) -> User:
-    if not (user := db.users.find_one({"username": username})) or not verifyPassword(
+    if not (user := findUserByUsername(db, username)) or not verifyPassword(
         password, user["password"]
     ):
         raise HTTPException(

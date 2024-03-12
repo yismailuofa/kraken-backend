@@ -34,6 +34,14 @@ def findUserById(db: Database, id: str):
     return db.users.find_one({"_id": toObjectId(id)})
 
 
+def findUserByUsername(db: Database, username: str):
+    return db.users.find_one({"username": username})
+
+
+def findUserByEmail(db: Database, email: str):
+    return db.users.find_one({"email": email})
+
+
 def insertUser(db: Database, user: User):
     return db.users.insert_one(user.model_dump(exclude={"id"}))
 
