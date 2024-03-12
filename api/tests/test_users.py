@@ -93,6 +93,21 @@ class TestUsers(TestBase):
         response = self.registerUser()
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def testRegisterExistingEmail(self):
+        response = self.registerUser()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.post(
+            "/users/register",
+            json={
+                "username": self.testUser.username + "foo",
+                "password": self.testUser.password,
+                "email": self.testUser.email,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def testLogin(self):
         registerResponse = self.registerUser()
         self.assertEqual(registerResponse.status_code, status.HTTP_201_CREATED)
