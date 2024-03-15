@@ -9,5 +9,6 @@ scrape_configs:
       - targets: ["localhost:9090"]
   - job_name: "api"
     scrape_interval: 5s
+    scheme: https
     static_configs:
       - targets: ["api:443"]

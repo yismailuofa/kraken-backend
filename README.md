@@ -14,6 +14,10 @@
 2. Run `docker compose -f docker-compose.dev.yml up -d --build`
 3. Go to http://localhost/docs
 
+## Accessing Instrumentation
+
+1. Head to http://localhost:9090 to access the prometheus dashboard.
+
 ## Running Tests
 
 1. Navigate to the root directory
