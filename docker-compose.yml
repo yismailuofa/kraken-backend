@@ -15,6 +15,17 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt
       - /var/lib/letsencrypt:/var/lib/letsencrypt
 
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    ports:
+      - 9090:9090
+    volumes:
+    - ./prometheus/:/etc/prometheus/
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --web.config.file=/etc/prometheus/web.yml
+    
   db:
     image: mongo
     ports:

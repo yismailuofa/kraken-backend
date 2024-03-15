@@ -4,13 +4,14 @@
 
 1. Start mongoDB (depends on your OS)
 2. Navigate to the root directory
-3. Start the api server with `uvicorn api.main:app --host 0.0.0.0 --port 80 --log-level debug --reload`
-4. Go to http://localhost/docs
+3. Run `pip3 install -r requirements.txt`
+4. Start the api server with `uvicorn api.main:app --host 0.0.0.0 --port 80 --log-level debug --reload`
+5. Go to http://localhost/docs
 
 ## Running the App on Docker
 
 1. Navigate to the root directory
-2. Run `docker compose -f docker-compose.dev.yml -d --build up`
+2. Run `docker compose -f docker-compose.dev.yml up -d --build`
 3. Go to http://localhost/docs
 
 ## Running Tests
