@@ -24,7 +24,6 @@ services:
     - ./prometheus/:/etc/prometheus/
     command:
     - --config.file=/etc/prometheus/prometheus.dev.yml
-    - --web.config.file=/etc/prometheus/web.yml
 
   db:
     image: mongo

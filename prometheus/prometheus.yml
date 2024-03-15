@@ -4,11 +4,10 @@ global:
 scrape_configs:
   - job_name: "prometheus"
     scrape_interval: 15s
-    metrics_path: /prometheus/metrics
     static_configs:
       - targets: ["localhost:9090"]
   - job_name: "api"
     scrape_interval: 5s
     scheme: https
     static_configs:
-      - targets: ["api:443"]
+      - targets: ["33db9.yeg.rac.sh"]
