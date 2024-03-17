@@ -178,4 +178,4 @@ class SprintView(Sprint):
 class ProjectView(Project):
     milestones: list[Milestone] = []
     tasks: list[Task] = []
-    sprints: list[Sprint] = []
+    sprints: list[SprintView] = []

@@ -18,13 +18,13 @@ from api.database import (
     toObjectId,
     updateManyUsers,
 )
+from api.routers.sprints import sprintToSprintView
 from api.routers.users import UserDep
 from api.schemas import (
     CreateableProject,
     Milestone,
     Project,
     ProjectView,
-    Sprint,
     Task,
     UpdateableProject,
     User,
@@ -92,7 +92,7 @@ def getProject(id: str, db: DBDep, user: UserDep) -> ProjectView:
     ]
     project.tasks = [Task(**task) for task in findTasks(db, {"projectId": id})]
     project.sprints = [
-        Sprint(**sprint) for sprint in findSprints(db, {"projectId": id})
+        sprintToSprintView(db, sprint) for sprint in findSprints(db, {"projectId": id})
     ]
 
     return project

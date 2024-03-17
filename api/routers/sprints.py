@@ -51,6 +51,22 @@ def createSprint(
     return sprint
 
 
+def sprintToSprintView(db: DBDep, sprint: dict) -> SprintView:
+    tasks = [findTaskById(db, task) for task in sprint.pop("tasks")]
+    milestones = [
+        findMilestoneById(db, milestone) for milestone in sprint.pop("milestones")
+    ]
+
+    sprintView = SprintView(**sprint)
+
+    sprintView.tasks = [Task(**task) for task in tasks if task]
+    sprintView.milestones = [
+        Milestone(**milestone) for milestone in milestones if milestone
+    ]
+
+    return sprintView
+
+
 @router.get("/{id}", name="Get Sprint")
 def getSprint(id: str, db: DBDep, user: UserDep) -> SprintView:
     if not (sprint := findSprintById(db, id)):
@@ -65,19 +81,7 @@ def getSprint(id: str, db: DBDep, user: UserDep) -> SprintView:
             detail="User does not have access to project",
         )
 
-    tasks = [findTaskById(db, task) for task in sprint.pop("tasks")]
-    milestones = [
-        findMilestoneById(db, milestone) for milestone in sprint.pop("milestones")
-    ]
-
-    sprintView = SprintView(**sprint)
-
-    sprintView.tasks = [Task(**task) for task in tasks if task]
-    sprintView.milestones = [
-        Milestone(**milestone) for milestone in milestones if milestone
-    ]
-
-    return sprintView
+    return sprintToSprintView(db, sprint)
 
 
 @router.patch("/{id}", name="Update Sprint")
