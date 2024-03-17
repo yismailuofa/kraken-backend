@@ -170,6 +170,11 @@ class Sprint(CreateableSprint):
     milestones: list[str] = []
 
 
+class SprintView(Sprint):
+    tasks: list[Task] = []
+    milestones: list[Milestone] = []
+
+
 class ProjectView(Project):
     milestones: list[Milestone] = []
     tasks: list[Task] = []

@@ -2,14 +2,23 @@ from fastapi import APIRouter, HTTPException, status
 
 from api.database import (
     DBDep,
+    findMilestoneById,
     findProjectById,
     findSprintAndUpdate,
     findSprintById,
+    findTaskById,
     insertSprint,
     removeSprint,
 )
 from api.routers.users import UserDep
-from api.schemas import CreateableSprint, Sprint, UpdateableSprint
+from api.schemas import (
+    CreateableSprint,
+    Milestone,
+    Sprint,
+    SprintView,
+    Task,
+    UpdateableSprint,
+)
 
 router = APIRouter()
 
@@ -43,7 +52,7 @@ def createSprint(
 
 
 @router.get("/{id}", name="Get Sprint")
-def getSprint(id: str, db: DBDep, user: UserDep) -> Sprint:
+def getSprint(id: str, db: DBDep, user: UserDep) -> SprintView:
     if not (sprint := findSprintById(db, id)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -56,7 +65,19 @@ def getSprint(id: str, db: DBDep, user: UserDep) -> Sprint:
             detail="User does not have access to project",
         )
 
-    return Sprint(**sprint)
+    tasks = [findTaskById(db, task) for task in sprint.pop("tasks")]
+    milestones = [
+        findMilestoneById(db, milestone) for milestone in sprint.pop("milestones")
+    ]
+
+    sprintView = SprintView(**sprint)
+
+    sprintView.tasks = [Task(**task) for task in tasks if task]
+    sprintView.milestones = [
+        Milestone(**milestone) for milestone in milestones if milestone
+    ]
+
+    return sprintView
 
 
 @router.patch("/{id}", name="Update Sprint")
