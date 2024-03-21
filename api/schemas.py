@@ -105,6 +105,7 @@ class Milestone(CreateableMilestone):
     id: MongoID = None
     status: Status = Status.todo
     tasks: list[str] = []
+    createdAt: datetime.datetime = Field(default_factory=now)
 
 
 class BaseCreateableTask(BaseModel):
@@ -144,7 +145,7 @@ class UpdateableTask(BaseUpdateableTask):
 class Task(CreateableTask):
     id: MongoID = None
     qaTask: BaseCreateableTask
-    createdAt: datetime.datetime = now()
+    createdAt: datetime.datetime = Field(default_factory=now)
 
 
 class CreateableSprint(BaseModel):
