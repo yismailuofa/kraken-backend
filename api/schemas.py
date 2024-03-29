@@ -25,7 +25,7 @@ def now():
 
 
 class Status(str, Enum):
-    todo = "Todo"
+    todo = "To Do"
     inProgress = "In Progress"
     completed = "Completed"
 
