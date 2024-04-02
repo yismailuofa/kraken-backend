@@ -248,6 +248,18 @@ def leaveProject(id: str, db: DBDep, user: UserDep) -> User:
             detail="Failed to leave project",
         )
 
+    if not (
+        updateManyTasks(
+            db,
+            {"projectId": id, "qaTask.assignedTo": user.username},
+            {"$set": {"qaTask.assignedTo": "Unassigned"}},
+        ).acknowledged
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to leave project",
+        )
+
     return User(**updatedUser)
 
 
@@ -309,8 +321,20 @@ def removeProjectUser(id: str, userID: str, user: UserDep, db: DBDep) -> UserVie
     if not (
         updateManyTasks(
             db,
-            {"projectId": id, "assignedTo": user.username},
+            {"projectId": id, "assignedTo": updatedUser["username"]},
             {"$set": {"assignedTo": "Unassigned"}},
+        ).acknowledged
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to remove user from project",
+        )
+
+    if not (
+        updateManyTasks(
+            db,
+            {"projectId": id, "qaTask.assignedTo": updatedUser["username"]},
+            {"$set": {"qaTask.assignedTo": "Unassigned"}},
         ).acknowledged
     ):
         raise HTTPException(
