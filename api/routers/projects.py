@@ -16,6 +16,7 @@ from api.database import (
     removeSprints,
     removeTasks,
     toObjectId,
+    updateManyTasks,
     updateManyUsers,
 )
 from api.routers.sprints import sprintToSprintView
@@ -235,6 +236,18 @@ def leaveProject(id: str, db: DBDep, user: UserDep) -> User:
             detail="Failed to leave project",
         )
 
+    if not (
+        updateManyTasks(
+            db,
+            {"projectId": id, "assignedTo": user.username},
+            {"$set": {"assignedTo": "Unassigned"}},
+        ).acknowledged
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to leave project",
+        )
+
     return User(**updatedUser)
 
 
@@ -287,6 +300,18 @@ def removeProjectUser(id: str, userID: str, user: UserDep, db: DBDep) -> UserVie
             userID,
             {"$pull": {"joinedProjects": id}},
         )
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to remove user from project",
+        )
+
+    if not (
+        updateManyTasks(
+            db,
+            {"projectId": id, "assignedTo": user.username},
+            {"$set": {"assignedTo": "Unassigned"}},
+        ).acknowledged
     ):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
