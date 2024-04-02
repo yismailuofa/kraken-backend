@@ -304,7 +304,7 @@ def getProjectUsers(id: str, db: DBDep, user: UserDep) -> list[UserView]:
             detail="Project not found",
         )
 
-    if not user.isAdmin(id):
+    if not user.canAccess(id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User does not have access to project",
