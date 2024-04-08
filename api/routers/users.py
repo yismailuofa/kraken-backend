@@ -21,6 +21,7 @@ router = APIRouter()
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "kraken")
 
 
+# FR1
 @router.post(
     "/register", status_code=status.HTTP_201_CREATED, response_model_by_alias=False
 )
@@ -62,6 +63,7 @@ def register(createableUser: CreatableUser, db: DBDep) -> User:
     return User(**userWithToken)
 
 
+# FR2
 @router.post("/login", response_model_by_alias=False)
 def login(username: str, password: str, db: DBDep) -> User:
     if not (user := findUserByUsername(db, username)) or not verifyPassword(
@@ -75,6 +77,7 @@ def login(username: str, password: str, db: DBDep) -> User:
     return User(**user)
 
 
+# FR2
 def getCurrentUser(
     credentials: Annotated[
         HTTPAuthorizationCredentials,
@@ -103,11 +106,13 @@ def getCurrentUser(
 UserDep = Annotated[User, Depends(getCurrentUser)]
 
 
+# FR2
 @router.get("/me", response_model_by_alias=False)
 def me(user: UserDep) -> User:
     return user
 
 
+# FR3
 @router.patch("/password/reset", response_model_by_alias=False, name="Reset Password")
 def resetPassword(
     newPassword: str,
@@ -127,13 +132,16 @@ def resetPassword(
     return User(**updatedUser)
 
 
+# FR3
 def hashPassword(password: str):
     return bcrypt.hash(password)
 
 
+# FR3
 def createToken(id: str):
     return jwt.encode({"sub": id}, JWT_SECRET_KEY, algorithm="HS256")
 
 
+# FR3
 def verifyPassword(plainPassword: str, hashedPassword: str):
     return bcrypt.verify(plainPassword, hashedPassword)

@@ -18,6 +18,7 @@ from api.schemas import CreateableMilestone, Milestone, UpdateableMilestone
 router = APIRouter()
 
 
+# FR14
 @router.post("/", name="Create Milestone")
 def createMilestone(
     createableMilestone: CreateableMilestone, db: DBDep, user: UserDep
@@ -46,6 +47,7 @@ def createMilestone(
     return milestone
 
 
+# FR23
 @router.get("/{id}", name="Get Milestone")
 def getMilestone(id: str, db: DBDep, user: UserDep) -> Milestone:
     if not (milestone := findMilestoneById(db, id)):
@@ -63,6 +65,7 @@ def getMilestone(id: str, db: DBDep, user: UserDep) -> Milestone:
     return Milestone(**milestone)
 
 
+# FR15
 @router.patch("/{id}", name="Update Milestone")
 def updateMilestone(
     id: str, updateableMilestone: UpdateableMilestone, db: DBDep, user: UserDep
@@ -92,6 +95,7 @@ def updateMilestone(
     return Milestone(**result)
 
 
+# FR16
 @router.delete("/{id}", name="Delete Milestone")
 def deleteMilestone(id: str, db: DBDep, user: UserDep):
     if not (milestone := findMilestoneById(db, id)):

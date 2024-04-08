@@ -23,6 +23,7 @@ from api.schemas import (
 router = APIRouter()
 
 
+# FR25
 @router.post("/", name="Create Sprint")
 def createSprint(
     createableSprint: CreateableSprint, db: DBDep, user: UserDep
@@ -67,6 +68,7 @@ def sprintToSprintView(db: DBDep, sprint: dict) -> SprintView:
     return sprintView
 
 
+# FR28
 @router.get("/{id}", name="Get Sprint")
 def getSprint(id: str, db: DBDep, user: UserDep) -> SprintView:
     if not (sprint := findSprintById(db, id)):
@@ -84,6 +86,7 @@ def getSprint(id: str, db: DBDep, user: UserDep) -> SprintView:
     return sprintToSprintView(db, sprint)
 
 
+# FR27
 @router.patch("/{id}", name="Update Sprint")
 def updateSprint(
     id: str, updateableSprint: UpdateableSprint, db: DBDep, user: UserDep
@@ -117,6 +120,7 @@ def updateSprint(
     return Sprint(**result)
 
 
+# FR26
 @router.delete("/{id}", name="Delete Sprint")
 def deleteSprint(id: str, db: DBDep, user: UserDep):
     if not (sprint := findSprintById(db, id)):

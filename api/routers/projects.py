@@ -35,6 +35,7 @@ from api.schemas import (
 router = APIRouter()
 
 
+# FR6
 @router.post("/", name="Create Project")
 def createProject(
     createableProject: CreateableProject,
@@ -63,6 +64,7 @@ def createProject(
     return project
 
 
+# FR4
 @router.get("/", name="Get Owned & Joined Projects")
 def getProjects(db: DBDep, user: UserDep) -> list[Project]:
     return [
@@ -73,6 +75,7 @@ def getProjects(db: DBDep, user: UserDep) -> list[Project]:
     ]
 
 
+# FR23
 @router.get("/{id}", name="Get Project")
 def getProject(id: str, db: DBDep, user: UserDep) -> ProjectView:
     if not (project := findProjectById(db, id)):
@@ -99,6 +102,7 @@ def getProject(id: str, db: DBDep, user: UserDep) -> ProjectView:
     return project
 
 
+# FR5
 @router.delete("/{id}", name="Delete Project")
 def deleteProject(id: str, db: DBDep, user: UserDep):
     if not (findProjectById(db, id)):
@@ -162,6 +166,7 @@ def deleteProject(id: str, db: DBDep, user: UserDep):
     }
 
 
+# FR7
 @router.patch("/{id}", name="Update Project")
 def updateProject(
     id: str, updateableProject: UpdateableProject, db: DBDep, user: UserDep
@@ -193,6 +198,7 @@ def updateProject(
     return Project(**result)
 
 
+# FR8
 @router.post("/{id}/join", name="Join Project")
 def joinProject(id: str, db: DBDep, user: UserDep) -> User:
     if not findProjectById(db, id):
@@ -216,6 +222,7 @@ def joinProject(id: str, db: DBDep, user: UserDep) -> User:
     return User(**updatedUser)
 
 
+# FR9
 @router.delete("/{id}/leave", name="Leave Project")
 def leaveProject(id: str, db: DBDep, user: UserDep) -> User:
     if not findProjectById(db, id):
@@ -263,6 +270,7 @@ def leaveProject(id: str, db: DBDep, user: UserDep) -> User:
     return User(**updatedUser)
 
 
+# FR10
 @router.post("/{id}/users", name="Add User to Project")
 def addProjectUser(id: str, email: str, user: UserDep, db: DBDep) -> UserView:
     if not findProjectById(db, id):
@@ -292,6 +300,7 @@ def addProjectUser(id: str, email: str, user: UserDep, db: DBDep) -> UserView:
     return UserView(**updatedUser)
 
 
+# FR11
 @router.delete("/{id}/users", name="Remove User from Project")
 def removeProjectUser(id: str, userID: str, user: UserDep, db: DBDep) -> UserView:
     if not findProjectById(db, id):
@@ -345,6 +354,7 @@ def removeProjectUser(id: str, userID: str, user: UserDep, db: DBDep) -> UserVie
     return UserView(**updatedUser)
 
 
+# FR12
 @router.get("/{id}/users", name="Get Project Users")
 def getProjectUsers(id: str, db: DBDep, user: UserDep) -> list[UserView]:
     if not findProjectById(db, id):

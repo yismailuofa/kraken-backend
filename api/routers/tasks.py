@@ -17,6 +17,7 @@ from api.schemas import CreateableTask, Task, UpdateableTask
 router = APIRouter()
 
 
+# FR17/18
 @router.post("/", name="Create Task")
 def createTask(createableTask: CreateableTask, db: DBDep, user: UserDep) -> Task:
     if not findProjectById(db, createableTask.projectId):
@@ -55,6 +56,7 @@ def createTask(createableTask: CreateableTask, db: DBDep, user: UserDep) -> Task
     return task
 
 
+# FR23
 @router.get("/{id}", name="Get Task")
 def getTask(id: str, db: DBDep, user: UserDep) -> Task:
     if not (task := findTaskById(db, id)):
@@ -72,6 +74,7 @@ def getTask(id: str, db: DBDep, user: UserDep) -> Task:
     return Task(**task)
 
 
+# FR20
 @router.patch("/{id}", name="Update Task")
 def updateTask(
     id: str, updateableTask: UpdateableTask, db: DBDep, user: UserDep
@@ -117,6 +120,7 @@ def updateTask(
     return Task(**result)
 
 
+# FR21
 @router.delete("/{id}", name="Delete Task")
 def deleteTask(id: str, db: DBDep, user: UserDep):
     if not (task := findTaskById(db, id)):
